@@ -22,13 +22,52 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// This function handles the new login flow as per the diagram
 export const signIn = async () => {
   try {
-    const response = await api.post(SYNC_USER_PATH);
-    return response.data; // Expected to return { userProfile, nextRoute }
+    const firebaseUser = auth.currentUser;
+    
+    // If this is a signin call and Firebase user has no displayName,
+    // it's likely an automatic call during signup before profile is updated - skip it
+    if (firebaseUser && !firebaseUser.displayName) {
+      throw new Error('Signup in progress - skipping automatic signin');
+    }
+    
+    const requestBody = {
+      uid: firebaseUser?.uid || '',
+      email: firebaseUser?.email || '',
+      displayName: firebaseUser?.displayName || ''
+    };
+    
+    const response = await api.post(SYNC_USER_PATH, requestBody);
+    return response.data;
   } catch (error) {
-    console.error('Error syncing user:', error);
+    console.error('Error signing in user:', error);
+    throw error;
+  }
+};
+
+// Legacy method for backward compatibility - for new user registration
+export const createUserProfile = async (authRequest: {
+  email: string;
+  password: string;
+  displayName: string;
+  gradeLevel: number;
+}) => {
+  try {
+    const firebaseUser = auth.currentUser;
+    
+    const requestBody = {
+      uid: firebaseUser?.uid || '',
+      email: authRequest.email,
+      displayName: authRequest.displayName,
+      password: authRequest.password,
+      gradeLevel: authRequest.gradeLevel
+    };
+    
+    const response = await api.post(SYNC_USER_PATH, requestBody);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating user profile:', error);
     throw error;
   }
 };
