@@ -1,263 +1,152 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, CheckCircle, Lock, Play } from "lucide-react";
-
-interface Topic {
-  id: string;
-  name: string;
-  description: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  questionsCount: number;
-  completed: boolean;
-  locked: boolean;
-}
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "./ui/breadcrumb";
+import { ArrowLeft, CheckCircle, Lock, Play, Home } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ExamService, type ExamTopic, type Grade } from "../../services";
 
 interface TopicSelectionProps {
-  grade: number;
+  grade: string;
   subject: string;
+  subjectName: string;
+  grades: Grade[];
   onBack: () => void;
-  onSelectTopic: (topic: string) => void;
+  onSelectTopic: (topic: string, topicName?: string) => void;
+  onNavigateToSubjects?: () => void;
 }
 
-// Mock topic data based on subject
-const topicsBySubject: Record<string, Topic[]> = {
-  math: [
-    {
-      id: "addition-subtraction",
-      name: "Addition & Subtraction",
-      description: "Master basic arithmetic operations",
-      difficulty: "Easy",
-      questionsCount: 25,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "multiplication-division",
-      name: "Multiplication & Division",
-      description: "Learn times tables and division",
-      difficulty: "Medium",
-      questionsCount: 30,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "fractions",
-      name: "Fractions",
-      description: "Understanding parts of a whole",
-      difficulty: "Medium",
-      questionsCount: 20,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "geometry",
-      name: "Geometry Basics",
-      description: "Shapes, angles, and measurements",
-      difficulty: "Medium",
-      questionsCount: 28,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "algebra",
-      name: "Algebra Introduction",
-      description: "Variables and equations",
-      difficulty: "Hard",
-      questionsCount: 22,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "square-roots",
-      name: "Square Roots & Powers",
-      description: "Understanding exponents and roots",
-      difficulty: "Hard",
-      questionsCount: 18,
-      completed: false,
-      locked: false
-    },
-  ],
-  science: [
-    {
-      id: "plants-animals",
-      name: "Plants & Animals",
-      description: "Learn about living organisms",
-      difficulty: "Easy",
-      questionsCount: 24,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "human-body",
-      name: "Human Body",
-      description: "Explore organs and systems",
-      difficulty: "Medium",
-      questionsCount: 26,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "matter-materials",
-      name: "Matter & Materials",
-      description: "Solids, liquids, and gases",
-      difficulty: "Medium",
-      questionsCount: 20,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "ecosystems",
-      name: "Ecosystems",
-      description: "Food chains and habitats",
-      difficulty: "Medium",
-      questionsCount: 22,
-      completed: false,
-      locked: false
-    },
-  ],
-  physics: [
-    {
-      id: "motion-forces",
-      name: "Motion & Forces",
-      description: "Newton's laws and movement",
-      difficulty: "Medium",
-      questionsCount: 25,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "energy",
-      name: "Energy",
-      description: "Types and transformations",
-      difficulty: "Medium",
-      questionsCount: 20,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "electricity",
-      name: "Electricity",
-      description: "Circuits and current",
-      difficulty: "Hard",
-      questionsCount: 22,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "light-sound",
-      name: "Light & Sound",
-      description: "Waves and properties",
-      difficulty: "Medium",
-      questionsCount: 18,
-      completed: false,
-      locked: false
-    },
-  ],
-  english: [
-    {
-      id: "vocabulary",
-      name: "Vocabulary Building",
-      description: "Expand your word knowledge",
-      difficulty: "Easy",
-      questionsCount: 30,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "grammar",
-      name: "Grammar Rules",
-      description: "Parts of speech and sentence structure",
-      difficulty: "Medium",
-      questionsCount: 28,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "commonly-confused",
-      name: "Commonly Confused Words",
-      description: "Their, there, they're and more",
-      difficulty: "Medium",
-      questionsCount: 20,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "reading-comprehension",
-      name: "Reading Comprehension",
-      description: "Understanding texts",
-      difficulty: "Hard",
-      questionsCount: 15,
-      completed: false,
-      locked: false
-    },
-  ],
-  geography: [
-    {
-      id: "continents-oceans",
-      name: "Continents & Oceans",
-      description: "Learn world geography",
-      difficulty: "Easy",
-      questionsCount: 20,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "countries-capitals",
-      name: "Countries & Capitals",
-      description: "Major countries and cities",
-      difficulty: "Medium",
-      questionsCount: 25,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "climate-weather",
-      name: "Climate & Weather",
-      description: "Understanding weather patterns",
-      difficulty: "Medium",
-      questionsCount: 18,
-      completed: false,
-      locked: false
-    },
-  ],
-  language: [
-    {
-      id: "basics",
-      name: "Language Basics",
-      description: "Common phrases and greetings",
-      difficulty: "Easy",
-      questionsCount: 20,
-      completed: false,
-      locked: false
-    },
-    {
-      id: "vocabulary",
-      name: "Essential Vocabulary",
-      description: "Everyday words and expressions",
-      difficulty: "Medium",
-      questionsCount: 25,
-      completed: false,
-      locked: false
-    },
-  ],
-};
+export function TopicSelection({ grade, subject, subjectName, grades: initialGrades, onBack, onSelectTopic, onNavigateToSubjects }: TopicSelectionProps) {
+  const [topics, setTopics] = useState<ExamTopic[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [grades, setGrades] = useState<Grade[]>(initialGrades || []);
+  const [gradesLoading, setGradesLoading] = useState(false);
 
-export function TopicSelection({ grade, subject, onBack, onSelectTopic }: TopicSelectionProps) {
-  const topics = topicsBySubject[subject] || [];
-  const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
-        return "bg-green-100 text-green-700 border-green-300";
-      case "Medium":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300";
-      case "Hard":
-        return "bg-red-100 text-red-700 border-red-300";
-      default:
-        return "bg-slate-100 text-slate-700 border-slate-300";
+  // Update grades when initialGrades prop changes
+  useEffect(() => {
+    if (initialGrades && initialGrades.length > 0) {
+      setGrades(initialGrades);
     }
+  }, [initialGrades]);
+
+  // Fetch grades if not available
+  useEffect(() => {
+    const fetchGrades = async () => {
+      if (!grades || grades.length === 0) {
+        try {
+          setGradesLoading(true);
+          console.log('Fetching grades because grades array is empty');
+          const gradesData = await ExamService.getGrades();
+          console.log('Grades fetched:', gradesData);
+          setGrades(gradesData);
+        } catch (error) {
+          console.error('Error fetching grades:', error);
+        } finally {
+          setGradesLoading(false);
+        }
+      }
+    };
+
+    fetchGrades();
+  }, [grades]);
+
+  // Fetch topics when component mounts or grade/subject changes
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        console.log('TopicSelection useEffect triggered with:', {
+          grade,
+          subject,
+          subjectName
+        });
+        
+        console.log('Making API call to fetch topics with:', {
+          gradeId: grade,
+          subjectId: subject,
+          endpoint: 'GET_TOPICS_BY_GRADE_CODE_SUBJECT'
+        });
+        
+        const topicsData = await ExamService.getTopicsByGradeCodeAndSubject(grade, subject);
+        console.log('Topics API response:', topicsData);
+        console.log('Setting topics state with', topicsData.length, 'topics');
+        setTopics(topicsData);
+      } catch (error: any) {
+        console.error('Error fetching topics:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText
+        });
+        setError(error.message || 'Failed to load topics');
+        // Fallback to empty array if API fails
+        setTopics([]);
+      } finally {
+        console.log('Setting isLoading to false');
+        setIsLoading(false);
+      }
+    };
+
+    if (grade && subject) {
+      console.log('Conditions met, calling fetchTopics');
+      fetchTopics();
+    } else {
+      console.log('Conditions not met:', {
+        grade,
+        subject,
+        hasGrade: !!grade,
+        hasSubject: !!subject,
+        allConditions: grade && subject
+      });
+      setIsLoading(false); // Important: Set loading to false if conditions aren't met
+    }
+  }, [grade, subject]);
+
+  // Get subject name for display - now passed from parent
+  const getSubjectDisplayName = () => {
+    return subjectName || 'Selected Subject';
+  };
+
+  // Get grade name for display
+  const getGradeDisplayName = () => {
+    if (!grades || grades.length === 0) {
+      // If grades are still loading, show a loading state
+      if (gradesLoading) {
+        return 'Loading...';
+      }
+      // If no grades available, try to extract grade from ID or show fallback
+      if (grade) {
+        // Try to parse grade code (e.g., "G8" -> "Grade 8")
+        const gradeMatch = grade.match(/G(\d+)/);
+        if (gradeMatch) {
+          return `Grade ${gradeMatch[1]}`;
+        }
+        // If it's a UUID, show a generic label
+        if (grade.includes('-')) {
+          return 'Selected Grade';
+        }
+        // Otherwise use the grade value directly
+        return `Grade ${grade}`;
+      }
+      return 'Unknown Grade';
+    }
+    
+    const selectedGrade = grades.find(g => g.gradeId === grade);
+    if (selectedGrade) {
+      return selectedGrade.name;
+    }
+    
+    // If grade not found in array, try to parse grade code
+    const gradeMatch = grade.match(/G(\d+)/);
+    if (gradeMatch) {
+      return `Grade ${gradeMatch[1]}`;
+    }
+    
+    return `Grade ${grade}`;
   };
 
   return (
@@ -270,72 +159,85 @@ export function TopicSelection({ grade, subject, onBack, onSelectTopic }: TopicS
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">Grade {grade}</Badge>
-            <Badge variant="outline">{subjectName}</Badge>
+            <Badge variant="outline">{getGradeDisplayName()}</Badge>
+            <Badge variant="outline">{getSubjectDisplayName()}</Badge>
           </div>
         </div>
 
         <div className="text-center mb-8">
           <h1 className="text-4xl mb-2">Choose a Topic</h1>
           <p className="text-lg text-muted-foreground">
-            Select a topic to start practicing {subjectName}
+            Select a topic to start practicing {getSubjectDisplayName()}
           </p>
+          {error && (
+            <p className="text-red-500 mt-2">{error}</p>
+          )}
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {topics.map((topic) => (
-            <Card 
-              key={topic.id}
-              className={`cursor-pointer transition-all ${
-                topic.locked 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:shadow-xl hover:scale-105'
-              }`}
-              onClick={() => !topic.locked && onSelectTopic(topic.id)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between mb-2">
-                  <Badge className={`${getDifficultyColor(topic.difficulty)} border`}>
-                    {topic.difficulty}
-                  </Badge>
-                  {topic.completed && (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  )}
-                  {topic.locked && (
-                    <Lock className="h-5 w-5 text-slate-400" />
-                  )}
-                </div>
-                <CardTitle className="text-xl">{topic.name}</CardTitle>
-                <CardDescription>{topic.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Questions</span>
-                    <span>{topic.questionsCount}</span>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading topics...</p>
+            </div>
+          </div>
+        ) : topics.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📚</div>
+            <h3 className="text-xl mb-2">No topics available</h3>
+            <p className="text-muted-foreground">No topics found for {getGradeDisplayName()} - {getSubjectDisplayName()}</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {topics.map((topic) => (
+              <Card 
+                key={topic.topicId}
+                className={`cursor-pointer transition-all ${
+                  topic.locked 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:shadow-xl hover:scale-105'
+                }`}
+                onClick={() => !topic.locked && onSelectTopic(topic.topicId)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {topic.completed && (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      )}
+                      {topic.locked && (
+                        <Lock className="h-5 w-5 text-slate-400" />
+                      )}
+                    </div>
                   </div>
-                  <Button 
-                    className="w-full" 
-                    disabled={topic.locked}
-                    variant={topic.locked ? "outline" : "default"}
-                  >
-                    {topic.locked ? (
-                      <>
-                        <Lock className="h-4 w-4 mr-2" />
-                        Locked
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Practice
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <CardTitle className="text-xl">{topic.topicName}</CardTitle>
+                  <CardDescription>{topic.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full" 
+                      disabled={topic.locked}
+                      variant={topic.locked ? "outline" : "default"}
+                    >
+                      {topic.locked ? (
+                        <>
+                          <Lock className="h-4 w-4 mr-2" />
+                          Locked
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Start Practice
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

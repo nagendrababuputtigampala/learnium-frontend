@@ -6,11 +6,32 @@ import { Footer } from "./Footer";
 import { CheckCircle2, XCircle, Clock, Calendar, Trophy, Target } from "lucide-react";
 
 interface UserData {
-  id: string;
-  name: string;
   email: string;
-  grade: number;
+  displayName: string;
+  name: string;
+  gradeName: string;
+  gradeId: string;
+  grade: string;
+  onboardingDone: boolean;
+  role: string;
+  status: string;
+  school: string | null;
+  bio: string | null;
   avatar: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  problemsSolved: number;
+  badgesEarned: number;
+  completionPercentage: number;
+  profileComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields for compatibility
   level: number;
   xp: number;
   totalXp: number;

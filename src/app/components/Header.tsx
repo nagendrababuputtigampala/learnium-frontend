@@ -12,11 +12,32 @@ import {
 import { User, Settings, FileText, LogOut, Trophy, Star } from "lucide-react";
 
 interface UserData {
-  id: string;
-  name: string;
   email: string;
-  grade: number;
+  displayName: string;
+  name: string;
+  gradeName: string;
+  gradeId: string;
+  grade: string;
+  onboardingDone: boolean;
+  role: string;
+  status: string;
+  school: string | null;
+  bio: string | null;
   avatar: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  problemsSolved: number;
+  badgesEarned: number;
+  completionPercentage: number;
+  profileComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields for compatibility
   level: number;
   xp: number;
   totalXp: number;
@@ -31,7 +52,7 @@ interface HeaderProps {
 }
 
 export function Header({ user, onNavigate, onLogout }: HeaderProps) {
-  const initials = user.name
+  const initials = (user.name || user.displayName || user.email || "U")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -76,15 +97,15 @@ export function Header({ user, onNavigate, onLogout }: HeaderProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden md:block text-left">
-                    <p className="text-sm">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">Grade {user.grade}</p>
+                    <p className="text-sm">{user.name || user.displayName || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{user.gradeName}</p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-sm font-medium">{user.name || user.displayName || 'User'}</p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                 </DropdownMenuLabel>
