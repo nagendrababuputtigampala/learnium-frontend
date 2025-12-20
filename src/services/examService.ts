@@ -237,11 +237,11 @@ export interface PartialExamMode {
 
 // API endpoints from environment variables
 const ENDPOINTS = {
-  GET_GRADES: import.meta.env.VITE_API_EXAM_GET_GRADES_PATH || '/exam/getGrades',
-  GET_SUBJECTS: import.meta.env.VITE_API_EXAM_GET_SUBJECTS_PATH || '/exam/getSubjects',
+  GET_GRADES: import.meta.env.VITE_API_EXAM_GET_GRADES_PATH || '/v1/grades',
+  GET_SUBJECTS: import.meta.env.VITE_API_EXAM_GET_SUBJECTS_PATH || '/v1/subjects',
   GET_SUBJECTS_BY_GRADE: import.meta.env.VITE_API_EXAM_GET_SUBJECTS_BY_GRADE_PATH || '/exam/getSubjectsByGrade',
   GET_SUBJECTS_BY_GRADE_CODE: import.meta.env.VITE_API_EXAM_GET_SUBJECTS_BY_GRADE_CODE_PATH || '/v1/subjects',
-  GET_TOPICS: import.meta.env.VITE_API_EXAM_GET_TOPICS_PATH || '/exam/getTopics',
+  GET_TOPICS: import.meta.env.VITE_API_EXAM_GET_TOPICS_PATH || '/v1/topics',
   GET_TOPICS_BY_GRADE_SUBJECT: import.meta.env.VITE_API_EXAM_GET_TOPICS_BY_GRADE_SUBJECT_PATH || '/exam/getTopicByGradeSubject',
   GET_TOPICS_BY_GRADE_CODE_SUBJECT: import.meta.env.VITE_API_EXAM_GET_TOPICS_BY_GRADE_CODE_SUBJECT_PATH || '/v1/topics',
   GET_EXAM_MODES: import.meta.env.VITE_API_EXAM_GET_EXAM_MODES_PATH || '/v1/exam-modes',
