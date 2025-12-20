@@ -9,15 +9,17 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../../firebase";
-import { signIn, createUserProfile } from "../../services/api";
+import { signIn, createUserProfile, getGrades } from "../../services";
+import { Grade } from "../../services/examService";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Facebook, Mail, Eye, EyeOff } from "lucide-react";
 
 interface AuthPageProps {
-  onLogin: (data: { userProfile: any, onboardingRequired: boolean }) => void;
+  onLogin: (data: { userProfile: any, onboardingRequired: boolean, grades?: Grade[] }) => void;
   onSignupStart: () => void;
 }
 
@@ -38,6 +40,28 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [showSignupConfirm, setShowSignupConfirm] = useState(false);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [gradesLoading, setGradesLoading] = useState(true);
+
+  // Load grades on component mount
+  useEffect(() => {
+    const loadGrades = async () => {
+      try {
+        setGradesLoading(true);
+        const gradesData = await getGrades();
+        setGrades(gradesData);
+      } catch (error) {
+        console.error('Error loading grades:', error);
+        // Don't show error to user as this is background loading
+        // Grades will be loaded later when needed if this fails
+      } finally {
+        setGradesLoading(false);
+      }
+    };
+
+    loadGrades();
+  }, []);
 
   // Auto-focus email field when switching between login/signup
   useEffect(() => {
@@ -133,7 +157,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       const data = await signIn();
       console.log("Existing user sync successful:", data);
       setSuccessMessage("Welcome back! Logging you in...");
-      onLogin(data);
+      onLogin({ ...data, grades });
     } catch (syncError: any) {
       console.error('Failed to sync existing user:', syncError);
       
@@ -161,7 +185,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
   };
 
   const handleLoginError = async (error: any) => {
-    // Check if this might be a new user trying to login
+    // Check if this might be a credential error
     if ((error.code === 'auth/invalid-credential' || 
          error.code === 'auth/invalid-login-credentials' || 
          error.message?.includes('INVALID_LOGIN_CREDENTIALS')) && 
@@ -169,31 +193,25 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       
       try {
         // Show checking message
-        setError('Checking account status...');
+        setError('Verifying account...');
         
         // Check if email exists in Firebase
         const signInMethods = await fetchSignInMethodsForEmail(auth, email.trim());
         
         if (signInMethods.length === 0) {
-          // Email doesn't exist
-          setError(`No account found with this email. Would you like to create an account instead?`);
+          // Email doesn't exist - show error and offer to create account
+          setError('No account found with this email.');
           
           setTimeout(() => {
-            const shouldSignUp = window.confirm(
-              "It looks like this email isn't registered yet. Would you like to create a new account?"
-            );
-            if (shouldSignUp) {
-              setIsLogin(false);
-              setError(null);
-              setValidationErrors({});
-            }
-          }, 100);
+            setShowSignupConfirm(true);
+          }, 500);
         } else {
-          // Email exists but password is wrong
-          setError('Incorrect password. Please try again or use "Forgot password" if you need help.');
+          // Email exists but password is wrong - show password error
+          setError('Invalid password. Please check your password or use "Forgot password" to reset it.');
         }
       } catch (checkError) {
-        // If we can't check, fall back to generic error
+        // If we can't check email existence, fall back to generic error
+        console.error('Error checking email existence:', checkError);
         setError('Invalid email or password. Please check your credentials and try again.');
       }
     } else {
@@ -282,11 +300,15 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
     onSignupStart();
     
     // Prepare profile data outside try block for better scoping
+    const selectedGrade = grades.find(g => g.gradeId === grade);
     const profileData = {
       email: email.trim(),
       password: password, // Backend needs this for validation
       displayName: name.trim(),
-      gradeLevel: parseInt(grade)
+      gradeLevel: selectedGrade ? selectedGrade.sortOrder || 1 : 1, // Use sortOrder as grade level number
+      gradeCode: selectedGrade?.code || `G${selectedGrade?.sortOrder || 1}`, // Use grade code from API
+      acceptTerms: acceptTerms, // Pass terms acceptance
+      marketingOptIn: false, // Default to false for now - can be added as separate checkbox later
     };
     
     try {
@@ -297,7 +319,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       console.log("Firebase auth successful:", {
         email: userCredential.user.email,
         uid: userCredential.user.uid,
-        isNewUser: userCredential.additionalUserInfo?.isNewUser
+        isNewUser: true // Always true for createUserWithEmailAndPassword
       });
       
       // Step 2: Update Firebase profile with displayName
@@ -317,7 +339,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       console.log("Backend profile creation successful:", data);
       
       setSuccessMessage("Account created successfully! Welcome to Learnium!");
-      onLogin(data);
+      onLogin({ ...data, grades });
       
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -358,7 +380,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       const data = await signIn();
       console.log("Backend sync successful:", data);
       
-      onLogin(data);
+      onLogin({ ...data, grades });
     } catch (error: any) {
       // Try to handle login-specific errors first
       try {
@@ -389,9 +411,10 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       if (error.code === 'auth/user-not-found') {
         errorMessage = 'No account found with this email. Please check your email or sign up for a new account.';
       } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again or use "Forgot password" to reset it.';
+        errorMessage = 'Invalid password. Please check your password or use "Forgot password" to reset it.';
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
-        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        // This will be handled by handleLoginError function above
+        errorMessage = 'Invalid credentials. Please check your email and password.';
       } else if (error.code === 'auth/too-many-requests') {
         errorMessage = 'Too many failed attempts. Please wait a moment and try again.';
       } else if (error.code === 'auth/network-request-failed') {
@@ -493,7 +516,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
         email: userCredential.user.email,
         displayName: userCredential.user.displayName,
         uid: userCredential.user.uid,
-        isNewUser: userCredential.additionalUserInfo?.isNewUser
+        isNewUser: false // We'll let backend determine this
       });
       
       setSuccessMessage("Social login successful! Redirecting to dashboard...");
@@ -503,7 +526,7 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
       const data = await signIn();
       console.log("Backend sync successful:", data);
       
-      onLogin(data);
+      onLogin({ ...data, grades });
     } catch (error: any) {
       console.error("Social login error:", error);
       
@@ -528,7 +551,86 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
     }
   };
 
+  const handleSignupConfirm = () => {
+    setShowSignupConfirm(false);
+    setIsLogin(false);
+    setError(null);
+    setValidationErrors({});
+  };
+
+  const handleSignupCancel = () => {
+    setShowSignupConfirm(false);
+  };
+
+  // Handle keyboard events for the dialog
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showSignupConfirm && e.key === 'Escape') {
+        handleSignupCancel();
+      }
+    };
+
+    if (showSignupConfirm) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent background scrolling when dialog is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showSignupConfirm]);
+
   return (
+    <>
+      {/* Signup Confirmation Dialog */}
+      {showSignupConfirm && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => e.target === e.currentTarget && handleSignupCancel()}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            role="dialog"
+            aria-labelledby="signup-dialog-title"
+            aria-describedby="signup-dialog-description"
+            tabIndex={-1}
+          >
+            <h3 
+              id="signup-dialog-title"
+              className="text-lg font-semibold mb-4 text-gray-900"
+            >
+              Create New Account?
+            </h3>
+            <p 
+              id="signup-dialog-description"
+              className="text-gray-600 mb-6"
+            >
+              This email isn't registered yet. Would you like to create a new account?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={handleSignupCancel}
+                className="px-4 py-2"
+                tabIndex={0}
+                autoFocus
+              >
+                No, Cancel
+              </Button>
+              <Button
+                onClick={handleSignupConfirm}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700"
+                tabIndex={0}
+              >
+                Yes, Create Account
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     <div className="min-h-screen flex">
       {/* Left Side - Hero Section */}
       <div 
@@ -835,20 +937,27 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
                   )}
                 </div>
                 <div>
-                  <Input
-                    id="grade"
-                    type="number"
-                    placeholder="Grade (1-12)"
-                    min="1"
-                    max="12"
+                  <Select
                     value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className={`h-12 ${validationErrors.grade ? 'border-red-500' : ''}`}
-                    required
-                    disabled={isLoading}
-                  />
+                    onValueChange={setGrade}
+                    disabled={isLoading || gradesLoading}
+                  >
+                    <SelectTrigger className={`h-12 ${validationErrors.grade ? 'border-red-500' : ''}`}>
+                      <SelectValue placeholder="Select your grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {grades.map((gradeOption) => (
+                        <SelectItem key={gradeOption.gradeId} value={gradeOption.gradeId}>
+                          {gradeOption.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {validationErrors.grade && (
                     <p className="text-red-500 text-xs mt-1">{validationErrors.grade}</p>
+                  )}
+                  {gradesLoading && (
+                    <p className="text-gray-500 text-xs mt-1">Loading grades...</p>
                   )}
                 </div>
                 <div className="relative">
@@ -1019,5 +1128,6 @@ export function AuthPage({ onLogin, onSignupStart }: AuthPageProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

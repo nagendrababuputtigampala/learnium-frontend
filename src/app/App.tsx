@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
-import { signIn } from "../services/api";
+import { signIn } from "../services";
+import { Grade } from "../services/examService";
 import { AuthPage } from "./components/AuthPage";
 import { Dashboard } from "./components/Dashboard";
 import { Profile } from "./components/Profile";
@@ -18,13 +19,33 @@ import { GamesHub } from "./components/GamesHub";
 import { PasswordResetPage } from "./components/PasswordResetPage";
 
 interface UserData {
-  id: string;
+  userId?: string; // Add userId field
+  email: string;
   displayName: string;
   name: string;
-  email: string;
-  gradeLevel: number;
-  grade: number;
+  gradeName: string;
+  gradeId: string; // Changed to string for UUID
+  grade: string; // Changed to string for UUID
+  onboardingDone: boolean;
+  role: string;
+  status: string;
+  school: string | null;
+  bio: string | null;
   avatar: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  problemsSolved: number;
+  badgesEarned: number;
+  completionPercentage: number;
+  profileComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields for compatibility
   level: number;
   xp: number;
   totalXp: number;
@@ -64,11 +85,16 @@ export default function App() {
   const [user, setUser] = useState<UserData | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isSignupInProgress, setIsSignupInProgress] = useState(false);
-  const [selectedGrade, setSelectedGrade] = useState<number>(0);
+  const [selectedGrade, setSelectedGrade] = useState<string>("");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
   const [selectedTopic, setSelectedTopic] = useState<string>("");
-  const [selectedTestType, setSelectedTestType] = useState<"quiz" | "flashcard" | "input" | "games">("quiz");
-  const [selectedTestId, setSelectedTestId] = useState<number>(1);
+  const [selectedTopicName, setSelectedTopicName] = useState<string>("");
+  const [selectedTestType, setSelectedTestType] = useState<"quiz" | "flashcard" | "input" | "games" | "fill_blanks">('quiz');
+  const [selectedExamModeId, setSelectedExamModeId] = useState<string>("");
+  const [selectedExamModeName, setSelectedExamModeName] = useState<string>("");
+  const [selectedTestId, setSelectedTestId] = useState<string>("");
+  const [grades, setGrades] = useState<Grade[]>([]);
 
   // Listen for Firebase auth state changes to handle page refresh
   useEffect(() => {
@@ -87,7 +113,13 @@ export default function App() {
           setUser({
             ...userProfile,
             name: userProfile.displayName,
-            grade: userProfile.gradeLevel,
+            grade: userProfile.gradeId,
+            // Computed fields for compatibility
+            level: Math.floor(userProfile.totalPoints / 100) + 1,
+            xp: userProfile.totalPoints,
+            totalXp: (Math.floor(userProfile.totalPoints / 100) + 1) * 100,
+            percentile: Math.min(95, Math.max(5, userProfile.completionPercentage)),
+            badges: Array(userProfile.badgesEarned).fill('badge'),
           });
           setCurrentView("dashboard");
         } catch (error: any) {
@@ -123,13 +155,25 @@ export default function App() {
     return () => unsubscribe();
   }, [user, isSignupInProgress]);
 
-  const handleLogin = (data: { userProfile: UserData, onboardingRequired: boolean }) => {
-    const { userProfile, onboardingRequired } = data;
+  const handleLogin = (data: { userProfile: any, onboardingRequired: boolean, grades?: Grade[] }) => {
+    const { userProfile, onboardingRequired, grades: gradesData } = data;
     console.log("Onboarding required:", onboardingRequired);
+    
+    // Store grades data if provided
+    if (gradesData && Array.isArray(gradesData)) {
+      setGrades(gradesData);
+    }
+    
     setUser({
       ...userProfile,
       name: userProfile.displayName,
-      grade: userProfile.gradeLevel,
+      grade: userProfile.gradeId,
+      // Computed fields for compatibility
+      level: Math.floor(userProfile.totalPoints / 100) + 1,
+      xp: userProfile.totalPoints,
+      totalXp: (Math.floor(userProfile.totalPoints / 100) + 1) * 100,
+      percentile: Math.min(95, Math.max(5, userProfile.completionPercentage)),
+      badges: Array(userProfile.badgesEarned).fill('badge'),
     });
     setCurrentView("dashboard");
     setIsSignupInProgress(false); // Clear signup flag on successful login
@@ -162,35 +206,31 @@ export default function App() {
 
   const handleStartPractice = () => {
     if (user) {
-      setSelectedGrade(user.grade); // Set default grade from user profile
+      // Set default grade from user profile, fallback to empty string if missing
+      const defaultGrade = user.gradeId ? user.gradeId.toString() : "";
+      setSelectedGrade(defaultGrade);
       setCurrentView("subject-selection");
     }
   };
 
-  const handleSelectGrade = (grade: number) => {
+  const handleSelectGrade = (grade: string) => {
     setSelectedGrade(grade);
   };
 
-  const handleSelectSubject = (subject: string) => {
-    setSelectedSubject(subject);
+  const handleSelectSubject = (subjectId: string, subjectName: string) => {
+    setSelectedSubject(subjectId);
+    setSelectedSubjectName(subjectName);
     setCurrentView("topic-selection");
   };
 
   const handleSelectTopic = (topic: string) => {
-    setSelectedTopic(topic);
+    setSelectedTopic(topic || "");
     setCurrentView("test-selection");
   };
 
-  const handleSelectTestType = (type: "quiz" | "flashcard" | "input" | "games") => {
-    setSelectedTestType(type);
-    if (type === "games") {
-      setCurrentView("games");
-    } else {
-      setCurrentView("test-list");
-    }
-  };
 
-  const handleSelectTestId = (id: number) => {
+
+  const handleSelectTestId = (id: string) => {
     setSelectedTestId(id);
     setCurrentView(selectedTestType);
   };
@@ -204,14 +244,26 @@ export default function App() {
   };
 
   const handleBackToSubjectSelection = () => {
+    setSelectedSubject("");
+    setSelectedSubjectName("");
+    setSelectedTopic("");
+    setSelectedTopicName("");
     setCurrentView("subject-selection");
   };
 
   const handleBackToTopicSelection = () => {
+    setSelectedTopic("");
+    setSelectedTopicName("");
+    setSelectedTestType('quiz');
+    setSelectedExamModeId("");
+    setSelectedExamModeName("");
     setCurrentView("topic-selection");
   };
 
   const handleBackToTestSelection = () => {
+    setSelectedTestType('quiz');
+    setSelectedExamModeId("");
+    setSelectedExamModeName("");
     setCurrentView("test-selection");
   };
 
@@ -274,9 +326,11 @@ export default function App() {
     return (
       <SubjectSelection
         grade={selectedGrade}
+        grades={grades}
         onBack={handleBackToDashboard}
         onSelectSubject={handleSelectSubject}
         onGradeChange={handleSelectGrade}
+        onNavigateToDashboard={handleBackToDashboard}
       />
     );
   }
@@ -286,7 +340,10 @@ export default function App() {
       <TopicSelection
         grade={selectedGrade}
         subject={selectedSubject}
+        subjectName={selectedSubjectName}
+        grades={grades}
         onBack={handleBackToSubjectSelection}
+        onNavigateToSubjects={() => setCurrentView('subject-selection')}
         onSelectTopic={handleSelectTopic}
       />
     );
@@ -295,9 +352,24 @@ export default function App() {
   if (currentView === "test-selection" && user) {
     return (
       <TestSelection
+        grade={selectedGrade}
         subject={selectedSubject}
+        subjectName={selectedSubjectName}
+        topic={selectedTopic}
+        topicName={selectedTopicName}
         onBack={handleBackToTopicSelection}
-        onSelectType={handleSelectTestType}
+        onNavigateToSubjects={() => setCurrentView('subject-selection')}
+        onNavigateToTopics={() => setCurrentView('topic-selection')}
+        onSelectType={(testType, examModeId) => {
+          setSelectedTestType(testType);
+          setSelectedExamModeId(examModeId);
+          setSelectedExamModeName(testType); // For now, use testType as exam mode name
+          if (testType === "games") {
+            setCurrentView("games");
+          } else {
+            setCurrentView("test-list");
+          }
+        }}
       />
     );
   }
@@ -306,12 +378,20 @@ export default function App() {
     return (
       <TestList
         user={user}
+        grade={selectedGrade}
         subject={selectedSubject}
+        subjectName={selectedSubjectName}
         topic={selectedTopic}
+        topicName={selectedTopicName}
+        examModeId={selectedExamModeId}
+        examModeName={selectedExamModeName}
         testType={selectedTestType}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
         onBack={handleBackToTestSelection}
+        onNavigateToSubjects={() => setCurrentView('subject-selection')}
+        onNavigateToTopics={() => setCurrentView('topic-selection')}
+        onNavigateToTestSelection={() => setCurrentView('test-selection')}
         onSelectTest={handleSelectTestId}
       />
     );
@@ -320,9 +400,15 @@ export default function App() {
   if (currentView === "quiz" && user) {
     return (
       <QuizTest
+        grade={selectedGrade}
         subject={selectedSubject}
+        topic={selectedTopic || ""}
+        examModeId={selectedExamModeId}
+        examId={selectedTestId}
+        user={user}
         onBack={handleBackToTestSelection}
         onComplete={handleQuizComplete}
+        onBackToDashboard={handleBackToDashboard}
       />
     );
   }
@@ -341,6 +427,7 @@ export default function App() {
     return (
       <UserInputTest
         subject={selectedSubject}
+        examAttemptId="7fff1aaa-5ce6-486a-b4c8-20e64e4b818d" // Sample attempt ID for testing
         onBack={handleBackToTestSelection}
         onComplete={handleQuizComplete}
       />

@@ -5,7 +5,7 @@ import { ArrowLeft, GraduationCap, BookOpen, Target } from "lucide-react";
 
 interface PracticeSelectionProps {
   onBack: () => void;
-  onSelectGrade: (grade: number) => void;
+  onSelectGrade: (grade: string) => void;
 }
 
 export function PracticeSelection({ onBack, onSelectGrade }: PracticeSelectionProps) {
@@ -46,7 +46,7 @@ export function PracticeSelection({ onBack, onSelectGrade }: PracticeSelectionPr
                   {group.grades.map((grade) => (
                     <button
                       key={grade}
-                      onClick={() => onSelectGrade(grade)}
+                      onClick={() => onSelectGrade(grade.toString())}
                       className="group relative overflow-hidden rounded-xl p-6 bg-white border-2 border-slate-200 hover:border-indigo-400 transition-all hover:shadow-lg"
                     >
                       <div className={`absolute inset-0 bg-gradient-to-br ${group.color} opacity-0 group-hover:opacity-10 transition-opacity`}></div>

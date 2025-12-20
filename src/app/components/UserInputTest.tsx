@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Progress } from "./ui/progress";
+import { api } from "../../services";
 import { 
   ArrowLeft, 
   Clock, 
@@ -35,8 +36,56 @@ interface InputQuestion {
   type: "number" | "word";
 }
 
+// API Response interfaces for review data
+interface QuestionAttempt {
+  questionAttemptId: string;
+  questionId: string;
+  questionType: string;
+  difficulty: number;
+  questionPayload: {
+    stem: string;
+    tags: string[];
+    type: string;
+    options?: {
+      id: string;
+      text: string;
+    }[];
+  };
+  userAnswer: {
+    selectedOptionId?: string;
+    text?: string;
+  };
+  correct: boolean;
+  points: number;
+  timeSpentSec: number;
+}
+
+interface ExamAttemptResponse {
+  attemptId: string;
+  examTemplateId: string;
+  templateName: string;
+  templateVersion: number;
+  gradeId: string;
+  subjectId: string;
+  topicId: string;
+  examModeId: string;
+  status: string;
+  durationSec: number;
+  totalQuestions: number;
+  attempted: number;
+  correct: number;
+  wrong: number;
+  skipped: number;
+  score: number;
+  percentage: number;
+  startedAt: string;
+  submittedAt: string;
+  questions: QuestionAttempt[];
+}
+
 interface UserInputTestProps {
   subject: string;
+  examAttemptId?: string; // Add attempt ID for API calls
   onBack: () => void;
   onComplete: (score: number) => void;
 }
@@ -157,7 +206,7 @@ const englishInputQuestions: InputQuestion[] = [
   },
 ];
 
-export function UserInputTest({ subject, onBack, onComplete }: UserInputTestProps) {
+export function UserInputTest({ subject, examAttemptId, onBack, onComplete }: UserInputTestProps) {
   const questions = subject === "Math" || subject === "math" ? mathInputQuestions : englishInputQuestions;
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>(Array(questions.length).fill(""));
@@ -167,6 +216,54 @@ export function UserInputTest({ subject, onBack, onComplete }: UserInputTestProp
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  
+  // API-related state
+  const [examAttemptData, setExamAttemptData] = useState<ExamAttemptResponse | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  // Load exam attempt data from API when review is requested
+  const loadExamAttemptData = async (attemptId: string) => {
+    try {
+      setReviewLoading(true);
+      setReviewError(null);
+      
+      const endpoint = `/v1/exam-attempts/${attemptId}`;
+      console.log('Loading exam attempt data for:', attemptId);
+      console.log('API endpoint:', endpoint);
+      console.log('Full URL will be:', `${api.defaults.baseURL}${endpoint}`);
+      
+      const response = await api.get<ExamAttemptResponse>(endpoint);
+      
+      console.log('Exam attempt data loaded:', response.data);
+      
+      setExamAttemptData(response.data);
+    } catch (error: any) {
+      console.error('Error loading exam attempt data:', error);
+      console.error('Request details:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      setReviewError(error.response?.data?.message || 'Failed to load exam attempt data');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  // Handle review button click
+  const handleShowReview = async () => {
+    console.log('Review button clicked, examAttemptId:', examAttemptId);
+    
+    if (examAttemptId) {
+      console.log('Calling loadExamAttemptData with attemptId:', examAttemptId);
+      await loadExamAttemptData(examAttemptId);
+    } else {
+      console.warn('No examAttemptId provided, using local data for review');
+    }
+    setShowReview(true);
+  };
 
   // Timer effect
   useEffect(() => {
@@ -316,7 +413,7 @@ export function UserInputTest({ subject, onBack, onComplete }: UserInputTestProp
               )}
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setShowReview(true)} className="flex-1">
+                <Button variant="outline" onClick={handleShowReview} className="flex-1">
                   Review Answers
                 </Button>
                 <Button onClick={onBack} className="flex-1">
@@ -332,6 +429,53 @@ export function UserInputTest({ subject, onBack, onComplete }: UserInputTestProp
 
   // Review Mode
   if (showReview) {
+    // Show loading state while fetching API data
+    if (reviewLoading) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center">Loading Review Data...</CardTitle>
+                <CardDescription className="text-center">Please wait while we fetch your exam results</CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Show error state if API call failed
+    if (reviewError) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center text-red-600">Error Loading Review Data</CardTitle>
+                <CardDescription className="text-center">{reviewError}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button onClick={() => setShowReview(false)} variant="outline" className="w-full">
+                  Back to Results
+                </Button>
+                <Button onClick={() => examAttemptId && loadExamAttemptData(examAttemptId)} className="w-full">
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    // Use API data if available, fallback to local data
+    const reviewData = examAttemptData?.questions || [];
+    const hasApiData = examAttemptData !== null;
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <div className="max-w-4xl mx-auto">
@@ -340,54 +484,171 @@ export function UserInputTest({ subject, onBack, onComplete }: UserInputTestProp
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Results
             </Button>
-            <Badge variant="outline">Review Mode</Badge>
+            <Badge variant="outline">
+              {hasApiData ? 'Review Mode (API Data)' : 'Review Mode (Local Data)'}
+            </Badge>
           </div>
 
-          <div className="space-y-6">
-            {questions.map((question, index) => {
-              const userAnswer = userAnswers[index];
-              const isCorrect = checkAnswer(userAnswer, question);
-              const wasAnswered = userAnswer.trim() !== "";
+          {hasApiData ? (
+            // API-based review
+            <div className="space-y-6">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Exam Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{examAttemptData.correct}</div>
+                      <div className="text-sm text-gray-600">Correct</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">{examAttemptData.wrong}</div>
+                      <div className="text-sm text-gray-600">Wrong</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-600">{examAttemptData.skipped}</div>
+                      <div className="text-sm text-gray-600">Skipped</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{examAttemptData.percentage}%</div>
+                      <div className="text-sm text-gray-600">Score</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              return (
-                <Card key={question.id} className={wasAnswered ? (isCorrect ? "border-green-300" : "border-red-300") : "border-slate-300"}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">Question {index + 1}</Badge>
-                          {isCorrect && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                          {!isCorrect && wasAnswered && <XCircle className="h-5 w-5 text-red-600" />}
-                          {!wasAnswered && <AlertCircle className="h-5 w-5 text-slate-400" />}
+              {reviewData.map((questionAttempt, index) => {
+                const isCorrect = questionAttempt.correct;
+                const userAnswer = questionAttempt.userAnswer;
+                const wasAnswered = userAnswer.selectedOptionId || userAnswer.text;
+
+                return (
+                  <Card key={questionAttempt.questionAttemptId} className={wasAnswered ? (isCorrect ? "border-green-300" : "border-red-300") : "border-slate-300"}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">Question {index + 1}</Badge>
+                            <Badge variant="outline">Difficulty {questionAttempt.difficulty}</Badge>
+                            {isCorrect && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            {!isCorrect && wasAnswered && <XCircle className="h-5 w-5 text-red-600" />}
+                            {!wasAnswered && <AlertCircle className="h-5 w-5 text-slate-400" />}
+                          </div>
+                          <CardTitle className="text-lg">{questionAttempt.questionPayload.stem}</CardTitle>
+                          <div className="text-sm text-gray-600 mt-2">
+                            Time spent: {questionAttempt.timeSpentSec}s | Points: {questionAttempt.points}
+                          </div>
                         </div>
-                        <CardTitle className="text-lg">{question.question}</CardTitle>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className={`p-4 rounded-lg border-2 ${
-                        wasAnswered && !isCorrect ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'
-                      }`}>
-                        <p className="text-sm text-muted-foreground mb-1">Your Answer:</p>
-                        <p className="text-lg">{userAnswer || "(Not answered)"}</p>
-                      </div>
-                      <div className="p-4 rounded-lg border-2 border-green-300 bg-green-50">
-                        <p className="text-sm text-muted-foreground mb-1">Correct Answer:</p>
-                        <p className="text-lg">{question.correctAnswer}</p>
-                      </div>
-                    </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {questionAttempt.questionType === 'MCQ' && questionAttempt.questionPayload.options && (
+                        <div className="space-y-2">
+                          {questionAttempt.questionPayload.options.map((option) => {
+                            const isUserChoice = userAnswer.selectedOptionId === option.id;
+                            // Note: We don't have correct answer info in the API response
+                            // This would need to be added to the API response to show correct answers
+                            
+                            let className = "w-full text-left p-3 rounded-lg border-2 ";
+                            if (isUserChoice) {
+                              className += isCorrect ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50";
+                            } else {
+                              className += "border-slate-200 bg-white";
+                            }
 
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm">
-                        <strong>Explanation:</strong> {question.explanation}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                            return (
+                              <div key={option.id} className={className}>
+                                <div className="flex items-center justify-between">
+                                  <span>{option.id}. {option.text}</span>
+                                  <div className="flex items-center gap-2">
+                                    {isUserChoice && isCorrect && <Badge className="bg-green-600">Your Correct Answer</Badge>}
+                                    {isUserChoice && !isCorrect && <Badge variant="destructive">Your Wrong Answer</Badge>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {questionAttempt.questionType === 'FIB' && (
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className={`p-4 rounded-lg border-2 ${
+                            wasAnswered && !isCorrect ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'
+                          }`}>
+                            <p className="text-sm text-muted-foreground mb-1">Your Answer:</p>
+                            <p className="text-lg">{userAnswer.text || "(Not answered)"}</p>
+                          </div>
+                          <div className="p-4 rounded-lg border-2 border-green-300 bg-green-50">
+                            <p className="text-sm text-muted-foreground mb-1">Result:</p>
+                            <p className="text-lg">{isCorrect ? "Correct" : "Incorrect"}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {questionAttempt.questionPayload.tags && (
+                        <div className="flex flex-wrap gap-1">
+                          {questionAttempt.questionPayload.tags.map((tag, tagIndex) => (
+                            <Badge key={tagIndex} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            // Fallback to local data review (existing logic)
+            <div className="space-y-6">
+              {questions.map((question, index) => {
+                const userAnswer = userAnswers[index];
+                const isCorrect = checkAnswer(userAnswer, question);
+                const wasAnswered = userAnswer.trim() !== "";
+
+                return (
+                  <Card key={question.id} className={wasAnswered ? (isCorrect ? "border-green-300" : "border-red-300") : "border-slate-300"}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">Question {index + 1}</Badge>
+                            {isCorrect && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                            {!isCorrect && wasAnswered && <XCircle className="h-5 w-5 text-red-600" />}
+                            {!wasAnswered && <AlertCircle className="h-5 w-5 text-slate-400" />}
+                          </div>
+                          <CardTitle className="text-lg">{question.question}</CardTitle>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className={`p-4 rounded-lg border-2 ${
+                          wasAnswered && !isCorrect ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'
+                        }`}>
+                          <p className="text-sm text-muted-foreground mb-1">Your Answer:</p>
+                          <p className="text-lg">{userAnswer || "(Not answered)"}</p>
+                        </div>
+                        <div className="p-4 rounded-lg border-2 border-green-300 bg-green-50">
+                          <p className="text-sm text-muted-foreground mb-1">Correct Answer:</p>
+                          <p className="text-lg">{question.correctAnswer}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm">
+                          <strong>Explanation:</strong> {question.explanation}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mt-6 flex justify-center">
             <Button onClick={onBack} size="lg">

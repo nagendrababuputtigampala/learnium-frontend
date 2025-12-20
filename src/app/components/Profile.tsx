@@ -11,11 +11,32 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 
 interface UserData {
-  id: string;
-  name: string;
   email: string;
-  grade: number;
+  displayName: string;
+  name: string;
+  gradeName: string;
+  gradeId: string;
+  grade: string;
+  onboardingDone: boolean;
+  role: string;
+  status: string;
+  school: string | null;
+  bio: string | null;
   avatar: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  problemsSolved: number;
+  badgesEarned: number;
+  completionPercentage: number;
+  profileComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields for compatibility
   level: number;
   xp: number;
   totalXp: number;
@@ -33,7 +54,7 @@ interface ProfileProps {
 export function Profile({ user, onNavigate, onLogout, onUpdateProfile }: ProfileProps) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
-  const [grade, setGrade] = useState(user.grade.toString());
+  const [grade, setGrade] = useState(user.grade);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -55,7 +76,7 @@ export function Profile({ user, onNavigate, onLogout, onUpdateProfile }: Profile
       onUpdateProfile({
         name,
         email,
-        grade: parseInt(grade),
+        grade: grade, // Keep as string
       });
       setIsSaving(false);
       setMessage("Profile updated successfully!");
