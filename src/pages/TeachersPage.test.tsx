@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PageResponse, TeacherDto } from '../lib/api'
-import { teacherOne, teacherTwo } from '../test/fixtures'
+import { teacherInvited, teacherOne, teacherTwo } from '../test/fixtures'
 import { renderWithProviders } from '../test/renderWithProviders'
 import TeachersPage from './TeachersPage'
 
@@ -55,6 +55,66 @@ function rowFor(name: string): HTMLElement {
   }
   return row
 }
+
+describe('TeachersPage resend invite', () => {
+  it('offers resend only to invited teachers, with an Invited badge', async () => {
+    mockTeachers(() =>
+      pageOf([teacherOne, teacherTwo, teacherInvited], 0, 1),
+    )
+    renderWithProviders(<TeachersPage />, ['/admin/teachers'])
+    expect(await screen.findByText('New Teacher')).toBeInTheDocument()
+    expect(screen.getByText('Invited')).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('button', { name: 'Resend invite' }),
+    ).toHaveLength(1)
+    expect(
+      within(rowFor('Mrs. Patel')).queryByRole('button', {
+        name: 'Resend invite',
+      }),
+    ).toBeNull()
+    expect(
+      within(rowFor('Mr. Lee')).queryByRole('button', {
+        name: 'Resend invite',
+      }),
+    ).toBeNull()
+    expect(
+      within(rowFor('New Teacher')).getByRole('button', {
+        name: 'Resend invite',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('resends the invite and confirms with a notice', async () => {
+    mockTeachers(() => pageOf([teacherInvited], 0, 1))
+    mock.post.mockResolvedValue({ data: undefined })
+    const user = userEvent.setup()
+    renderWithProviders(<TeachersPage />, ['/admin/teachers'])
+    expect(await screen.findByText('New Teacher')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Resend invite' }))
+    expect(
+      await screen.findByText('Invitation re-sent to new@learnium.test'),
+    ).toBeInTheDocument()
+    expect(mock.post).toHaveBeenCalledWith(
+      '/admin/teachers/user-teacher-3/resend-invite',
+    )
+  })
+
+  it('surfaces the envelope message when resending fails', async () => {
+    mockTeachers(() => pageOf([teacherInvited], 0, 1))
+    mock.post.mockRejectedValue({
+      response: {
+        data: { message: 'This teacher has already set a password.' },
+      },
+    })
+    const user = userEvent.setup()
+    renderWithProviders(<TeachersPage />, ['/admin/teachers'])
+    expect(await screen.findByText('New Teacher')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Resend invite' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This teacher has already set a password.',
+    )
+  })
+})
 
 describe('TeachersPage list', () => {
   it('renders teachers with status badges and join dates', async () => {

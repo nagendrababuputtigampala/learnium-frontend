@@ -2,6 +2,17 @@
 
 ## Codex fix round (2026-10-28)
 
+- G6 done (resend invite, UX): Teachers page shows a "Resend invite"
+  action only for teachers in the invited state (new TeacherDto
+  `invited` flag from the backend list DTO; those rows also get an
+  "Invited" status badge instead of "Active"). It posts to
+  POST /admin/teachers/{id}/resend-invite, confirms with
+  "Invitation re-sent to <email>", and surfaces the error envelope
+  message on failure. Tests: visibility per state, endpoint call +
+  success notice, error surfacing. NOTE for the backend pairing: the
+  frontend reads the pending state from a boolean `invited` field on
+  TeacherDto — the backend list DTO must expose it under that name.
+
 - G5 done (standard sign-in background, UX): per-centre backgrounds
   were dropped by the product owner — ONE standard backdrop for all.
   New committed asset src/assets/signin-background.svg (deep-indigo

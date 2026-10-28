@@ -72,6 +72,23 @@ export default function TeachersPage() {
     },
   })
 
+  const resendInviteMutation = useMutation({
+    mutationFn: async (teacher: TeacherDto) => {
+      await apiClient.post(
+        `/admin/teachers/${teacher.userId}/resend-invite`,
+      )
+      return teacher
+    },
+    onSuccess: (teacher) => {
+      setNotice(`Invitation re-sent to ${teacher.email}`)
+    },
+    onError: (error) => {
+      setActionError(
+        getApiErrorMessage(error, 'Could not resend the invitation.'),
+      )
+    },
+  })
+
   const deactivateMutation = useMutation({
     mutationFn: async (userId: string) => {
       await apiClient.delete(`/admin/teachers/${userId}`)
@@ -215,45 +232,66 @@ export default function TeachersPage() {
                     <td className="py-2">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          teacher.active
-                            ? 'bg-emerald-progress/15 text-emerald-progress'
-                            : 'bg-ink/10 text-ink/60'
+                          teacher.invited
+                            ? 'bg-indigo-bright/15 text-indigo-primary'
+                            : teacher.active
+                              ? 'bg-emerald-progress/15 text-emerald-progress'
+                              : 'bg-ink/10 text-ink/60'
                         }`}
                       >
-                        {teacher.active ? 'Active' : 'Inactive'}
+                        {teacher.invited
+                          ? 'Invited'
+                          : teacher.active
+                            ? 'Active'
+                            : 'Inactive'}
                       </span>
                     </td>
                     <td className="py-2">{teacher.createdAt.slice(0, 10)}</td>
                     <td className="py-2">
-                      {teacher.active &&
-                        (confirmingId === teacher.userId ? (
-                          <span className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deactivateMutation.mutate(teacher.userId)
-                              }
-                              className="rounded-full bg-rose-weak px-3 py-1 text-xs font-semibold text-white hover:brightness-95"
-                            >
-                              Confirm deactivate
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmingId(null)}
-                              className="rounded-full border border-card-border px-3 py-1 text-xs font-semibold hover:bg-paper"
-                            >
-                              Cancel
-                            </button>
-                          </span>
-                        ) : (
+                      <span className="flex gap-2">
+                        {teacher.invited && (
                           <button
                             type="button"
-                            onClick={() => setConfirmingId(teacher.userId)}
+                            onClick={() => {
+                              setNotice(null)
+                              setActionError(null)
+                              resendInviteMutation.mutate(teacher)
+                            }}
                             className="rounded-full border border-card-border px-3 py-1 text-xs font-semibold hover:bg-paper"
                           >
-                            Deactivate
+                            Resend invite
                           </button>
-                        ))}
+                        )}
+                        {teacher.active &&
+                          (confirmingId === teacher.userId ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deactivateMutation.mutate(teacher.userId)
+                                }
+                                className="rounded-full bg-rose-weak px-3 py-1 text-xs font-semibold text-white hover:brightness-95"
+                              >
+                                Confirm deactivate
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingId(null)}
+                                className="rounded-full border border-card-border px-3 py-1 text-xs font-semibold hover:bg-paper"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(teacher.userId)}
+                              className="rounded-full border border-card-border px-3 py-1 text-xs font-semibold hover:bg-paper"
+                            >
+                              Deactivate
+                            </button>
+                          ))}
+                      </span>
                     </td>
                   </tr>
                 ))}

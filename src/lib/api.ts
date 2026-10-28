@@ -63,6 +63,8 @@ export interface TeacherDto {
   email: string
   displayName: string
   active: boolean
+  /** True while the teacher has been invited but not yet set a password. */
+  invited: boolean
   createdAt: string
 }
 
