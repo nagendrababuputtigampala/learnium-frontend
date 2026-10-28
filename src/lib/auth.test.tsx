@@ -3,16 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  adminUser,
   loginResponseFor,
   studentProfile,
   teacherUser,
 } from '../test/fixtures'
 import { LocationProbe, renderWithProviders } from '../test/renderWithProviders'
 import {
+  advanceSessionGeneration,
   getAccessToken,
   getApiErrorMessage,
   getStudent,
   StaleSessionError,
+  type AuthUser,
 } from './api'
 import { useAuth } from './auth'
 
@@ -145,6 +148,134 @@ describe('AuthProvider restore', () => {
       'stored-refresh',
     )
     expect(screen.getByTestId('user-email')).toHaveTextContent('none')
+  })
+})
+
+describe('AuthProvider restore generation guard', () => {
+  /** Deferred /me response the test settles when it chooses. */
+  function deferredMe() {
+    let resolveMe: (value: { data: AuthUser }) => void = () => undefined
+    let rejectMe: (error: unknown) => void = () => undefined
+    mock.get.mockImplementation(
+      () =>
+        new Promise<{ data: AuthUser }>((resolve, reject) => {
+          resolveMe = resolve
+          rejectMe = reject
+        }),
+    )
+    return {
+      resolve: (user: AuthUser) => resolveMe({ data: user }),
+      reject: (error: unknown) => rejectMe(error),
+    }
+  }
+
+  function mockLoginAsAdmin() {
+    mock.post.mockImplementation((url: string) => {
+      if (url === '/auth/login') {
+        return Promise.resolve({ data: loginResponseFor(adminUser) })
+      }
+      return Promise.resolve({ data: undefined })
+    })
+  }
+
+  it('a late /me cannot overwrite a fresher login with the old identity', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem('learnium.refreshToken', 'stored-refresh')
+    mock.refreshAccessToken.mockResolvedValue('fresh-access')
+    const me = deferredMe()
+    mockLoginAsAdmin()
+    renderWithProviders(<Probe />, ['/'])
+    await waitFor(() => expect(mock.get).toHaveBeenCalledWith('/me'))
+    // The fresh login completes while the restore's /me is in flight.
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent(
+        'ada@learnium.test',
+      ),
+    )
+    // The stale restore now resolves with the PREVIOUS identity.
+    me.resolve(teacherUser)
+    await waitFor(() =>
+      expect(screen.getByTestId('restoring')).toHaveTextContent('false'),
+    )
+    expect(screen.getByTestId('user-email')).toHaveTextContent(
+      'ada@learnium.test',
+    )
+  })
+
+  it('a late /me cannot resurrect the identity after a logout', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem('learnium.refreshToken', 'stored-refresh')
+    mock.refreshAccessToken.mockResolvedValue('fresh-access')
+    const me = deferredMe()
+    mock.post.mockResolvedValue({ data: undefined })
+    renderWithProviders(<Probe />, ['/'])
+    await waitFor(() => expect(mock.get).toHaveBeenCalledWith('/me'))
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent('/login'),
+    )
+    // The stale restore resolves after the logout completed.
+    me.resolve(teacherUser)
+    await waitFor(() =>
+      expect(screen.getByTestId('restoring')).toHaveTextContent('false'),
+    )
+    expect(screen.getByTestId('user-email')).toHaveTextContent('none')
+    expect(localStorage.getItem('learnium.refreshToken')).toBeNull()
+  })
+
+  it('abandons the restore before /me when the generation moved during refresh', async () => {
+    localStorage.setItem('learnium.refreshToken', 'stored-refresh')
+    let resolveRefresh: (value: string) => void = () => undefined
+    mock.refreshAccessToken.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveRefresh = resolve
+        }),
+    )
+    renderWithProviders(<Probe />, ['/'])
+    await waitFor(() => expect(mock.refreshAccessToken).toHaveBeenCalled())
+    resolveRefresh('fresh-access')
+    // A session change lands before the restore continuation runs.
+    advanceSessionGeneration()
+    await waitFor(() =>
+      expect(screen.getByTestId('restoring')).toHaveTextContent('false'),
+    )
+    expect(mock.get).not.toHaveBeenCalled()
+    expect(screen.getByTestId('user-email')).toHaveTextContent('none')
+    // The other session owns storage: restore cleared nothing.
+    expect(localStorage.getItem('learnium.refreshToken')).toBe(
+      'stored-refresh',
+    )
+  })
+
+  it('a late /me failure does not clear a fresher login', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem('learnium.refreshToken', 'stored-refresh')
+    mock.refreshAccessToken.mockResolvedValue('fresh-access')
+    const me = deferredMe()
+    mockLoginAsAdmin()
+    renderWithProviders(<Probe />, ['/'])
+    await waitFor(() => expect(mock.get).toHaveBeenCalledWith('/me'))
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent(
+        'ada@learnium.test',
+      ),
+    )
+    // The stale restore's /me now fails: the error belongs to the old
+    // session, so the new login's identity and tokens stay put.
+    me.reject(new Error('server down'))
+    await waitFor(() =>
+      expect(screen.getByTestId('restoring')).toHaveTextContent('false'),
+    )
+    expect(screen.getByTestId('user-email')).toHaveTextContent(
+      'ada@learnium.test',
+    )
+    expect(getAccessToken()).toBe('access-token')
+    expect(localStorage.getItem('learnium.refreshToken')).toBe(
+      'refresh-token',
+    )
   })
 })
 

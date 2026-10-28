@@ -2,6 +2,18 @@
 
 ## Codex fix round 2 (2026-10-28)
 
+- R2-F2 done (late /me restores previous identity, P2): AuthProvider
+  restore now captures the session generation at start and re-checks
+  it after the refresh leg and after the /me leg before applying
+  anything; the failure path clears only when the error is not stale
+  AND the generation has not moved. A restore superseded by a login
+  or logout is abandoned silently — it can neither overwrite the new
+  identity with the old /me result nor resurrect a logged-out one,
+  and a late /me failure no longer clears the fresher session.
+  Tests: four interleavings (late /me vs fresh login, late /me vs
+  logout, generation moving during the refresh leg, late /me failure
+  vs fresh login). All four verified red against the pre-fix code.
+
 - R2-F1 done (failed stale refresh, P2): refreshAccessToken now
   generation-checks its REJECTION path too — a refresh that fails
   after its session generation was superseded is rethrown as

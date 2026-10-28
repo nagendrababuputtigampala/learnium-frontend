@@ -13,6 +13,7 @@ import {
   apiClient,
   clearTokens,
   getRefreshToken,
+  getSessionGeneration,
   isStaleSessionError,
   refreshAccessToken,
   saveStudentSession,
@@ -62,12 +63,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsRestoring(false)
       return
     }
+    // The whole restore is generation-guarded: if a login, logout or
+    // student session supersedes it mid-flight, its late results are
+    // abandoned instead of overwriting (or clearing) the identity
+    // that now owns the session.
+    const generation = getSessionGeneration()
     try {
       await refreshAccessToken()
+      if (generation !== getSessionGeneration()) {
+        return
+      }
       const response = await apiClient.get<AuthUser>('/me')
+      if (generation !== getSessionGeneration()) {
+        return
+      }
       setUser(response.data)
     } catch (error) {
-      if (!isStaleSessionError(error)) {
+      if (
+        !isStaleSessionError(error) &&
+        generation === getSessionGeneration()
+      ) {
         clearTokens()
         clearCachedData()
         setUser(null)
