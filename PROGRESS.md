@@ -2,6 +2,11 @@
 
 ## Codex fix round (2026-10-28)
 
+- G4 done (join back navigation, UX): /join shows a "Back to sign in"
+  link (Lucide ArrowLeft) at the top of the card — the join flow is a
+  single page, so it is present at every step — navigating to /login.
+  Presence + navigation test added.
+
 - G3 done (password visibility toggle, UX): new shared PasswordInput
   component (Lucide Eye/EyeOff, aria-label swaps Show/Hide password,
   type=button) wired into the Login page password field and both

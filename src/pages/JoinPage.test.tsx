@@ -71,6 +71,17 @@ async function chooseCentreAndBatch(
 }
 
 describe('JoinPage', () => {
+  it('shows a back-to-sign-in link that navigates to /login', async () => {
+    const user = userEvent.setup()
+    renderJoin()
+    const backLink = screen.getByRole('link', { name: 'Back to sign in' })
+    expect(backLink).toHaveAttribute('href', '/login')
+    await user.click(backLink)
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent('/login'),
+    )
+  })
+
   it('renders the centre list and keeps the batch select disabled', async () => {
     renderJoin()
     expect(
