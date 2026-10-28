@@ -239,7 +239,9 @@ let refreshPromise: Promise<string> | null = null
  * Concurrent callers within one session generation share one in-flight
  * request; the rotated refresh token replaces the stored one. If the
  * session generation advances while the request is in flight, the
- * result is discarded with a StaleSessionError instead of being stored.
+ * outcome is discarded with a StaleSessionError instead of being
+ * applied — on success AND on failure alike, so a stale rejection can
+ * never clear a newer session's tokens or report its expiry.
  */
 export function refreshAccessToken(): Promise<string> {
   if (refreshPromise !== null) {
@@ -252,14 +254,24 @@ export function refreshAccessToken(): Promise<string> {
   const generation = sessionGeneration
   const promise = axios
     .post<LoginResponse>(`${API_BASE_URL}/auth/refresh`, { refreshToken })
-    .then((response) => {
-      if (generation !== sessionGeneration) {
-        throw new StaleSessionError()
-      }
-      setAccessToken(response.data.accessToken)
-      setRefreshToken(response.data.refreshToken)
-      return response.data.accessToken
-    })
+    .then(
+      (response) => {
+        if (generation !== sessionGeneration) {
+          throw new StaleSessionError()
+        }
+        setAccessToken(response.data.accessToken)
+        setRefreshToken(response.data.refreshToken)
+        return response.data.accessToken
+      },
+      (error: unknown) => {
+        if (generation !== sessionGeneration) {
+          // The session this refresh belonged to has been replaced;
+          // its failure is not the current session's expiry.
+          throw new StaleSessionError()
+        }
+        throw error
+      },
+    )
     .finally(() => {
       if (refreshPromise === promise) {
         refreshPromise = null

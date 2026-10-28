@@ -1,5 +1,17 @@
 # Progress — feature/auth-roles (frontend, M2)
 
+## Codex fix round 2 (2026-10-28)
+
+- R2-F1 done (failed stale refresh, P2): refreshAccessToken now
+  generation-checks its REJECTION path too — a refresh that fails
+  after its session generation was superseded is rethrown as
+  StaleSessionError, so the interceptor's stale branch leaves the
+  newer session's tokens alone and never fires the expiry handler
+  for it. Current-generation failures still propagate unchanged.
+  Tests: stale rejection after clear, stale rejection vs a newer
+  login's tokens, superseded rejection keeps the newer single-flight
+  slot, interceptor-level stale-failure scenario.
+
 ## Codex fix round (2026-10-28)
 
 - FIX ROUND COMPLETE: G1–G6 all landed (6 commits on top of
