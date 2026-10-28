@@ -33,8 +33,17 @@ export interface MockHandles {
   sessionExpired: { handler: (() => void) | null }
 }
 
+/** Mirror of the real module's StaleSessionError. */
+export class MockStaleSessionError extends Error {
+  constructor() {
+    super('Session changed while a token refresh was in flight')
+    this.name = 'StaleSessionError'
+  }
+}
+
 export function createMockApiModule(handles: MockHandles) {
   let accessToken: string | null = null
+  let sessionGeneration = 0
   const http = {
     get: handles.get,
     post: handles.post,
@@ -63,6 +72,14 @@ export function createMockApiModule(handles: MockHandles) {
     clearTokens: () => {
       accessToken = null
       localStorage.removeItem('learnium.refreshToken')
+      sessionGeneration += 1
+    },
+    StaleSessionError: MockStaleSessionError,
+    isStaleSessionError: (error: unknown) =>
+      error instanceof MockStaleSessionError,
+    getSessionGeneration: () => sessionGeneration,
+    advanceSessionGeneration: () => {
+      sessionGeneration += 1
     },
     saveStudentSession: (session: {
       accessToken: string

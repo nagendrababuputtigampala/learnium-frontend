@@ -1,5 +1,18 @@
 # Progress — feature/auth-roles (frontend, M2)
 
+## Codex fix round (2026-10-28)
+
+- G2 done (refresh generation guard, P2): api.ts gains a session
+  generation counter — clearTokens() and advanceSessionGeneration()
+  advance it; refreshAccessToken captures the generation and discards
+  its result with StaleSessionError if the generation moved (logout or
+  newer login), never writing stale tokens; a superseded refresh no
+  longer clears the single-flight slot of a newer one. The 401
+  interceptor leaves a newer session's tokens and the session-expired
+  handler untouched when its refresh goes stale. mockApi mirrors the
+  new exports. api.test.ts: +5 tests (33 total) incl. deferred-refresh
+  races across logout and re-login.
+
 - Done S5 (auth wiring & landing): api client with in-memory access token,
   localStorage refresh token, single-flight 401 refresh + retry (auth
   endpoints excluded), session-expired hook; AuthProvider (restore via
