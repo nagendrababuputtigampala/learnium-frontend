@@ -2,6 +2,13 @@
 
 ## Codex fix round (2026-10-28)
 
+- FIX ROUND COMPLETE: G1–G6 all landed (6 commits on top of
+  f0ee3848). Final gate in one run: build green; 20 test files,
+  176 tests, all passing; coverage 100% statements / branches /
+  functions / lines. Not pushed — bundle handoff per the working
+  agreement. Open pairing point: G6 expects `invited` on TeacherDto
+  from the backend (see the G6 note below).
+
 - G6 done (resend invite, UX): Teachers page shows a "Resend invite"
   action only for teachers in the invited state (new TeacherDto
   `invited` flag from the backend list DTO; those rows also get an
