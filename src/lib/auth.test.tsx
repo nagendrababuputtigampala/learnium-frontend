@@ -8,7 +8,12 @@ import {
   teacherUser,
 } from '../test/fixtures'
 import { LocationProbe, renderWithProviders } from '../test/renderWithProviders'
-import { getAccessToken, getApiErrorMessage, getStudent } from './api'
+import {
+  getAccessToken,
+  getApiErrorMessage,
+  getStudent,
+  StaleSessionError,
+} from './api'
 import { useAuth } from './auth'
 
 const mock = vi.hoisted(() => ({
@@ -129,6 +134,17 @@ describe('AuthProvider restore', () => {
     await renderProbe()
     expect(screen.getByTestId('user-email')).toHaveTextContent('none')
     expect(localStorage.getItem('learnium.refreshToken')).toBeNull()
+  })
+
+  it('keeps the stored session when the restore refresh went stale', async () => {
+    localStorage.setItem('learnium.refreshToken', 'stored-refresh')
+    mock.refreshAccessToken.mockRejectedValue(new StaleSessionError())
+    await renderProbe()
+    // A newer session owns the auth state: nothing is cleared here.
+    expect(localStorage.getItem('learnium.refreshToken')).toBe(
+      'stored-refresh',
+    )
+    expect(screen.getByTestId('user-email')).toHaveTextContent('none')
   })
 })
 
@@ -275,6 +291,125 @@ describe('AuthProvider actions', () => {
     expect(mock.sessionExpired.handler).not.toBeNull()
     unmount()
     expect(mock.sessionExpired.handler).toBeNull()
+  })
+})
+
+describe('AuthProvider cache isolation', () => {
+  function mockLoginLogout() {
+    mock.post.mockImplementation((url: string) => {
+      if (url === '/auth/login') {
+        return Promise.resolve({ data: loginResponseFor(teacherUser) })
+      }
+      return Promise.resolve({ data: undefined })
+    })
+  }
+
+  it('login clears queries cached by a previous session', async () => {
+    const user = userEvent.setup()
+    mockLoginLogout()
+    const { queryClient } = await renderProbe()
+    queryClient.setQueryData(['batches', 'centre-1'], ['Centre A batch'])
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent(
+        'patel@learnium.test',
+      ),
+    )
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+  })
+
+  it('logout clears cached queries and PIN-bearing mutations', async () => {
+    const user = userEvent.setup()
+    mockLoginLogout()
+    const { queryClient } = await renderProbe()
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent(
+        'patel@learnium.test',
+      ),
+    )
+    queryClient.setQueryData(['batches', 'centre-1'], ['Centre A batch'])
+    const mutation = queryClient.getMutationCache().build(queryClient, {
+      mutationFn: (pin: string) => Promise.resolve({ pin }),
+    })
+    await mutation.execute('4821')
+    expect(
+      JSON.stringify(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .map((entry) => entry.state.data),
+      ),
+    ).toContain('4821')
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent('none'),
+    )
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(0)
+  })
+
+  it('after logout, the previous centre’s scoped data is not readable', async () => {
+    const user = userEvent.setup()
+    mockLoginLogout()
+    const { queryClient } = await renderProbe()
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent(
+        'patel@learnium.test',
+      ),
+    )
+    queryClient.setQueryData(['batches', 'centre-1'], ['Centre A batch'])
+    queryClient.setQueryData(['teachers', 'centre-1', 0], ['Centre A teacher'])
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent('none'),
+    )
+    // Whatever account signs in next on this browser starts from an
+    // empty cache: centre A's entries are gone, not just hidden.
+    expect(queryClient.getQueryData(['batches', 'centre-1'])).toBeUndefined()
+    expect(
+      queryClient.getQueryData(['teachers', 'centre-1', 0]),
+    ).toBeUndefined()
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+  })
+
+  it('studentSession clears cached staff data', async () => {
+    const user = userEvent.setup()
+    mock.post.mockResolvedValue({
+      data: {
+        accessToken: 'student-token',
+        tokenType: 'Bearer',
+        expiresInSeconds: 43200,
+        student: studentProfile,
+      },
+    })
+    const { queryClient } = await renderProbe()
+    queryClient.setQueryData(['batches', 'centre-1'], ['Centre A batch'])
+    await user.click(screen.getByRole('button', { name: 'Join as student' }))
+    await waitFor(() =>
+      expect(sessionStorage.getItem('learnium.studentToken')).toBe(
+        'student-token',
+      ),
+    )
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+  })
+
+  it('session expiry clears the cache', async () => {
+    const user = userEvent.setup()
+    mockLoginLogout()
+    const { queryClient } = await renderProbe()
+    await user.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() =>
+      expect(screen.getByTestId('user-email')).toHaveTextContent(
+        'patel@learnium.test',
+      ),
+    )
+    queryClient.setQueryData(['batches', 'centre-1'], ['Centre A batch'])
+    act(() => {
+      mock.sessionExpired.handler?.()
+    })
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
   })
 })
 

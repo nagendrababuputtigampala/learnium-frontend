@@ -91,6 +91,41 @@ describe('RosterPanel list states', () => {
   })
 })
 
+describe('RosterPanel PIN cache hygiene', () => {
+  it('drops the PIN from the mutation cache when the notice is dismissed', async () => {
+    mock.get.mockResolvedValue({ data: [] })
+    mock.post.mockResolvedValue({
+      data: {
+        membershipId: 'membership-9',
+        userId: 'user-student-9',
+        fullName: 'New Kid',
+        pin: '4821',
+      },
+    })
+    const user = userEvent.setup()
+    const { queryClient } = renderWithProviders(
+      <RosterPanel batchId="batch-1" />,
+    )
+    const cachedMutationData = () =>
+      JSON.stringify(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .map((entry) => entry.state.data ?? null),
+      )
+    expect(
+      await screen.findByText('No students on the roster yet.'),
+    ).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Student name'), 'New Kid')
+    await user.click(screen.getByRole('button', { name: 'Add student' }))
+    expect(await screen.findByText('4821')).toBeInTheDocument()
+    expect(cachedMutationData()).toContain('4821')
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    expect(screen.queryByText('4821')).toBeNull()
+    expect(cachedMutationData()).not.toContain('4821')
+  })
+})
+
 describe('RosterPanel add student', () => {
   it('adds a student and shows the one-time PIN with copy support', async () => {
     mock.get.mockResolvedValue({ data: [rosterStudentActive] })

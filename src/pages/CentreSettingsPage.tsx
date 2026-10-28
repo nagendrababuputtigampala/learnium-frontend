@@ -8,6 +8,7 @@ import {
   getApiErrorMessage,
   type CentreDto,
 } from '../lib/api'
+import { useAuth } from '../lib/auth'
 
 const centreSettingsSchema = z.object({
   name: z.string().min(1, 'Centre name is required'),
@@ -137,8 +138,9 @@ function SettingsForm({ centre }: { centre: CentreDto }) {
 }
 
 export default function CentreSettingsPage() {
+  const { user } = useAuth()
   const centreQuery = useQuery({
-    queryKey: ['centre'],
+    queryKey: ['centre', user?.centreId],
     queryFn: async () => {
       const response = await apiClient.get<CentreDto>('/centre')
       return response.data

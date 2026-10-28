@@ -15,7 +15,7 @@ const linkClassName =
 export default function CentreOverviewPage() {
   const { user } = useAuth()
   const teachersQuery = useQuery({
-    queryKey: ['teachers-count'],
+    queryKey: ['teachers-count', user?.centreId],
     queryFn: async () => {
       const response = await apiClient.get<PageResponse<TeacherDto>>(
         '/admin/teachers',
@@ -25,7 +25,7 @@ export default function CentreOverviewPage() {
     },
   })
   const batchesQuery = useQuery({
-    queryKey: ['batches'],
+    queryKey: ['batches', user?.centreId],
     queryFn: async () => {
       const response = await apiClient.get<BatchDto[]>('/batches')
       return response.data

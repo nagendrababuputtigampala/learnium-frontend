@@ -2,6 +2,23 @@
 
 ## Codex fix round (2026-10-28)
 
+- G1 done (cache isolation, P1): AuthProvider cancels + clears the
+  whole React Query cache (queries AND mutations) on every session
+  transition — login, logout, session expiry, restore failure and
+  student-session start — before the new identity drives rendering.
+  Centre-owned keys are scoped by centreId: ['batches', centreId],
+  ['teachers', centreId, page], ['teachers-count', centreId],
+  ['teachers-all', centreId], ['centre', centreId]; roster stays
+  batch-scoped and the ['batches']/['teachers'] prefix invalidations
+  still match. Dismissing the one-time PIN notice now also clears the
+  mutation cache (observer reset() alone leaves data in the cache in
+  this React Query version). One BatchesPage test assertion was scoped
+  to the batch card: with the centreId key, the list settles after
+  restore, when the grade-subject <option> with the same label text
+  also exists (in production the route guard mounts pages only with a
+  restored user, so the transient undefined-centreId key is test-only).
+  auth.test.ts +6 cache-isolation tests, RosterPanel +1 PIN-cache test.
+
 - G2 done (refresh generation guard, P2): api.ts gains a session
   generation counter — clearTokens() and advanceSessionGeneration()
   advance it; refreshAccessToken captures the generation and discards

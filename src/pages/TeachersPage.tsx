@@ -9,6 +9,7 @@ import {
   type PageResponse,
   type TeacherDto,
 } from '../lib/api'
+import { useAuth } from '../lib/auth'
 
 const PAGE_SIZE = 10
 
@@ -23,6 +24,7 @@ const inputClassName =
   'w-full rounded-lg border border-card-border px-3 py-2 text-sm outline-none focus:border-indigo-bright focus:ring-2 focus:ring-indigo-bright/30'
 
 export default function TeachersPage() {
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(0)
   const [notice, setNotice] = useState<string | null>(null)
@@ -30,7 +32,7 @@ export default function TeachersPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   const teachersQuery = useQuery({
-    queryKey: ['teachers', page],
+    queryKey: ['teachers', user?.centreId, page],
     queryFn: async () => {
       const response = await apiClient.get<PageResponse<TeacherDto>>(
         '/admin/teachers',

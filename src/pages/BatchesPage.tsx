@@ -32,7 +32,7 @@ export default function BatchesPage() {
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null)
 
   const batchesQuery = useQuery({
-    queryKey: ['batches'],
+    queryKey: ['batches', user?.centreId],
     queryFn: async () => {
       const response = await apiClient.get<BatchDto[]>('/batches')
       return response.data
@@ -51,7 +51,7 @@ export default function BatchesPage() {
   })
 
   const teachersQuery = useQuery({
-    queryKey: ['teachers-all'],
+    queryKey: ['teachers-all', user?.centreId],
     queryFn: async () => {
       const response = await apiClient.get<PageResponse<TeacherDto>>(
         '/admin/teachers',
