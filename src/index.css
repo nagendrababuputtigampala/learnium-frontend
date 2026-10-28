@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  /* Indigo Scholar palette */
+  --color-indigo-primary: #4338ca;
+  --color-indigo-deep: #312e81;
+  --color-indigo-bright: #6366f1;
+  --color-indigo-tint: #eef2ff;
+  --color-marigold: #f59e0b;
+  --color-emerald-progress: #10b981;
+  --color-teal-fill: #0d9488;
+  --color-violet-theory: #7c3aed;
+  --color-rose-weak: #f43f5e;
+  --color-ink: #111827;
+  --color-paper: #fafaf9;
+  --color-card-border: #eceaf6;
+
+  --font-display: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
