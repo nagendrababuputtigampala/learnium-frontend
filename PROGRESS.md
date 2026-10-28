@@ -2,6 +2,12 @@
 
 ## Codex fix round 2 (2026-10-28)
 
+- FIX ROUND 2 COMPLETE: R2-F1 + R2-F2 landed (2 commits on top of
+  7d987414). Final gate in one run: build green; 20 test files,
+  184 tests, all passing; coverage 100% statements / branches /
+  functions / lines. Not pushed — bundle handoff per the working
+  agreement. (The backend's two round-2 items are a separate build.)
+
 - R2-F2 done (late /me restores previous identity, P2): AuthProvider
   restore now captures the session generation at start and re-checks
   it after the refresh leg and after the /me leg before applying
