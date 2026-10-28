@@ -42,6 +42,19 @@ function seedSession(user: AuthUser) {
         data: { content: [], page: 0, size: 1, totalElements: 2, totalPages: 2 },
       })
     }
+    if (url === '/centre') {
+      return Promise.resolve({
+        data: {
+          centreId: 'centre-1',
+          name: 'Demo Tutoring Centre',
+          logoUrl: '',
+          contactEmail: 'hello@demo.test',
+        },
+      })
+    }
+    if (url === '/public/centres') {
+      return Promise.resolve({ data: [] })
+    }
     return Promise.reject(new Error(`Unexpected GET ${url}`))
   })
 }
@@ -108,6 +121,53 @@ describe('AppRoutes', () => {
     renderAt('/no-such-page')
     expect(
       screen.getByRole('heading', { name: 'Page not found' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the Batches page for a signed-in teacher', async () => {
+    seedSession(teacherUser)
+    renderAt('/batches')
+    expect(
+      await screen.findByRole('heading', { name: 'Batches' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the Teachers page for an admin', async () => {
+    seedSession(adminUser)
+    renderAt('/admin/teachers')
+    expect(
+      await screen.findByRole('heading', { name: 'Teachers' }),
+    ).toBeInTheDocument()
+  })
+
+  it('redirects a teacher away from /admin/teachers', async () => {
+    seedSession(teacherUser)
+    renderAt('/admin/teachers')
+    expect(
+      await screen.findByRole('heading', { name: 'Teacher Home' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the Centre Settings page for an admin', async () => {
+    seedSession(adminUser)
+    renderAt('/admin/settings')
+    expect(
+      await screen.findByRole('heading', { name: 'Centre Settings' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the student join page without the app layout', async () => {
+    renderAt('/join')
+    expect(
+      await screen.findByRole('heading', { name: 'Join your test' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Batches' })).toBeNull()
+  })
+
+  it('sends /student visitors without a student session to /join', async () => {
+    renderAt('/student')
+    expect(
+      await screen.findByRole('heading', { name: 'Join your test' }),
     ).toBeInTheDocument()
   })
 })

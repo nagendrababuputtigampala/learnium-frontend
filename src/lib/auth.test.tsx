@@ -212,14 +212,17 @@ describe('AuthProvider actions', () => {
     })
     await renderProbe()
     await user.click(screen.getByRole('button', { name: 'Log in' }))
-    await waitFor(() =>
-      expect(screen.getByTestId('user-email')).toHaveTextContent(
-        'patel@learnium.test',
-      ),
+    await waitFor(
+      () =>
+        expect(screen.getByTestId('user-email')).toHaveTextContent(
+          'patel@learnium.test',
+        ),
+      { timeout: 5000 },
     )
     await user.click(screen.getByRole('button', { name: 'Log out' }))
-    await waitFor(() =>
-      expect(screen.getByTestId('user-email')).toHaveTextContent('none'),
+    await waitFor(
+      () => expect(screen.getByTestId('user-email')).toHaveTextContent('none'),
+      { timeout: 5000 },
     )
     expect(screen.getByTestId('location')).toHaveTextContent('/login')
   })

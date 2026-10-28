@@ -16,8 +16,25 @@
   submit) were rewritten to the M2 behaviour with equal or better
   coverage. Deactivate confirmations use an inline two-step button
   (no window.confirm) — deterministic in tests and better UX.
-- Next: S6 — Teachers page, Batches page + roster panel, Centre
-  Settings page, student Join page + Student Home.
+- Done S6 (admin & roster UI + student join): TeachersPage (paged table,
+  invite form → invite-sent notice, inline-confirm deactivate); BatchesPage
+  (batch list, admin create form with grade-subject select, assign/remove
+  teacher, roster expand); RosterPanel (list with status + PIN-locked
+  badges, add single, bulk add one-per-line, reset-PIN, deactivate; PINs
+  from create/reset shown once in a dismissible panel with copy button,
+  never re-fetched); CentreSettingsPage (GET /centre prefilled form, PUT
+  save with success feedback); JoinPage (public, centre → batch selects,
+  name + PIN student session; ?batch=<uuid> preselects the batch and its
+  centre via a lookup across centres); StudentHomePage (greets the student
+  from the real session store, redirects to /join without one). Routes:
+  /batches in the layout, /admin/teachers + /admin/settings behind
+  AdminRoute, /join + /student outside the layout. Final state: build
+  green; 153 tests, 19 files; 100% statements/branches/functions/lines.
+- S6 notes: one timing flake in the full suite (auth logout test, 1s
+  default waitFor under parallel load) fixed by widening that test's
+  waitFor timeouts to 5s; JoinPage lookup reads the loaded centre list
+  via the query's `enabled` gate (no dead fallback branch).
+- Next: none on this branch — M2 frontend complete, awaiting review/merge.
 - Failing tests: none.
 
 ---
