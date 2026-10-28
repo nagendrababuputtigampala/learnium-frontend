@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+
+# Environment files (may hold secrets — never commit)
+.env
+.env.*
 
 # Editor directories and files
 .vscode/*
