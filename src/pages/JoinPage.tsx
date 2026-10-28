@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
+import signInBackground from '../assets/signin-background.svg'
 import {
   apiClient,
   getApiErrorMessage,
@@ -113,7 +114,10 @@ export default function JoinPage() {
   const batches = batchesQuery.data ?? []
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4 font-body text-ink">
+    <div
+      className="flex min-h-screen items-center justify-center bg-paper bg-cover bg-center px-4 font-body text-ink"
+      style={{ backgroundImage: `url("${signInBackground}")` }}
+    >
       <div className="w-full max-w-sm rounded-2xl border border-card-border bg-white p-8 shadow-sm">
         <Link
           to="/login"

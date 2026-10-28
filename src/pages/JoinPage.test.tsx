@@ -71,6 +71,13 @@ async function chooseCentreAndBatch(
 }
 
 describe('JoinPage', () => {
+  it('renders the standard sign-in background behind the card', () => {
+    const { container } = renderJoin()
+    const shell = container.querySelector('[style*="background-image"]')
+    expect(shell).not.toBeNull()
+    expect(shell?.className).toContain('min-h-screen')
+  })
+
   it('shows a back-to-sign-in link that navigates to /login', async () => {
     const user = userEvent.setup()
     renderJoin()

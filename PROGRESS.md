@@ -2,6 +2,16 @@
 
 ## Codex fix round (2026-10-28)
 
+- G5 done (standard sign-in background, UX): per-centre backgrounds
+  were dropped by the product owner — ONE standard backdrop for all.
+  New committed asset src/assets/signin-background.svg (deep-indigo
+  gradient, dot grid, soft glows, subtle marigold open-book motif),
+  imported by the Login and Join pages and applied as a full-page
+  cover background behind the white card (small enough that Vite
+  inlines it into the bundle as a data URI — verified in dist). No
+  configuration or per-centre logic. Background-presence tests on
+  both pages.
+
 - G4 done (join back navigation, UX): /join shows a "Back to sign in"
   link (Lucide ArrowLeft) at the top of the card — the join flow is a
   single page, so it is present at every step — navigating to /login.

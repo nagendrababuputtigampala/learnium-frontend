@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import signInBackground from '../assets/signin-background.svg'
 import PasswordInput from '../components/PasswordInput'
 import { getApiErrorMessage } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -48,7 +49,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4 font-body text-ink">
+    <div
+      className="flex min-h-screen items-center justify-center bg-paper bg-cover bg-center px-4 font-body text-ink"
+      style={{ backgroundImage: `url("${signInBackground}")` }}
+    >
       <div className="w-full max-w-sm rounded-2xl border border-card-border bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-primary font-display text-xl font-bold text-white">

@@ -42,6 +42,14 @@ beforeEach(() => {
 })
 
 describe('LoginPage', () => {
+  it('renders the standard sign-in background behind the card', () => {
+    const { container } = renderLogin()
+    const shell = container.querySelector('[style*="background-image"]')
+    expect(shell).not.toBeNull()
+    expect(shell?.className).toContain('min-h-screen')
+    expect(shell?.getAttribute('style')).toMatch(/background-image: url\(/)
+  })
+
   it('toggles the password between masked and visible', async () => {
     const user = userEvent.setup()
     renderLogin()
