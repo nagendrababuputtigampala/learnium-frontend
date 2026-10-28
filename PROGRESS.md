@@ -2,6 +2,12 @@
 
 ## Codex fix round (2026-10-28)
 
+- G3 done (password visibility toggle, UX): new shared PasswordInput
+  component (Lucide Eye/EyeOff, aria-label swaps Show/Hide password,
+  type=button) wired into the Login page password field and both
+  Set Password fields; adds the lucide-react dependency. Component
+  test + toggle tests on both pages.
+
 - G1 done (cache isolation, P1): AuthProvider cancels + clears the
   whole React Query cache (queries AND mutations) on every session
   transition — login, logout, session expiry, restore failure and

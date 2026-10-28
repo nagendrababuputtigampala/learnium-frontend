@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import PasswordInput from '../components/PasswordInput'
 import { getApiErrorMessage } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
@@ -90,11 +91,9 @@ export default function LoginPage() {
             >
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
-              className={inputClassName}
               {...register('password')}
             />
             {errors.password && (

@@ -42,6 +42,17 @@ beforeEach(() => {
 })
 
 describe('LoginPage', () => {
+  it('toggles the password between masked and visible', async () => {
+    const user = userEvent.setup()
+    renderLogin()
+    const input = screen.getByLabelText('Password')
+    expect(input).toHaveAttribute('type', 'password')
+    await user.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(input).toHaveAttribute('type', 'text')
+    await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(input).toHaveAttribute('type', 'password')
+  })
+
   it('renders the sign-in heading, form fields and helper links', () => {
     renderLogin()
     expect(
