@@ -29,9 +29,10 @@ Then open the URL Vite prints (default http://localhost:5173).
 | `npm run test:coverage` | Unit tests with the 100% coverage gate       |
 | `npm run preview`     | Preview the production build                   |
 
-Unit-test coverage of authored code is gated at **100%** (lines, functions,
-branches, statements) in `vite.config.ts`. Only `src/main.tsx`, test files and
-the test setup are excluded.
+Unit-test coverage is gated at **100%** (lines, functions, branches,
+statements) in `vite.config.ts` for every authored source file in the
+coverage set. The only exclusions are `src/main.tsx` (bootstrap wiring that
+only mounts the app), test files and the test setup.
 
 ## Configuration
 
