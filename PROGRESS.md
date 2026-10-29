@@ -35,7 +35,17 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   Sidebar nav label settled as "Materials" (was the skeleton's
   "My Materials" — for an admin the list is the whole centre's).
   8 page tests + 3 AppRoutes tests.
-- Next: F4 material detail page.
+- Done F4 (material detail page): pages/MaterialDetailPage at
+  /materials/:materialId — metadata header (title, grade · subject,
+  source chip, status chip, character count, added date), the
+  status explanation with what-to-do-next wording, the extracted
+  text in a scrollable preformatted block (or an honest "no
+  extracted text" note), the deduplicated banner when arriving with
+  router state {deduplicated: true} ("You already had this chapter —
+  opened your existing copy"), and a two-step "Remove from your
+  materials" delete that returns to the list. No generation UI —
+  that arrives in branch 2. 10 detail tests + 2 route tests.
+- Next: F5 final gate (full coverage run + build).
 - Failing tests: none.
 
 ---

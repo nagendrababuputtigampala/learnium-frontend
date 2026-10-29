@@ -1,7 +1,12 @@
 import { screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AuthUser } from '../lib/api'
-import { adminUser, batchOne, teacherUser } from '../test/fixtures'
+import {
+  adminUser,
+  batchOne,
+  materialDetailOk,
+  teacherUser,
+} from '../test/fixtures'
 import { renderWithProviders } from '../test/renderWithProviders'
 import AppRoutes from './AppRoutes'
 
@@ -41,6 +46,9 @@ function seedSession(user: AuthUser) {
       return Promise.resolve({
         data: { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 },
       })
+    }
+    if (url === '/materials/mat-1') {
+      return Promise.resolve({ data: materialDetailOk })
     }
     if (url === '/admin/teachers') {
       return Promise.resolve({
@@ -160,6 +168,19 @@ describe('AppRoutes', () => {
     renderAt('/materials')
     expect(await screen.findByLabelText('Email')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Materials' })).toBeNull()
+  })
+
+  it('shows the material detail page for a signed-in teacher', async () => {
+    seedSession(teacherUser)
+    renderAt('/materials/mat-1')
+    expect(
+      await screen.findByRole('heading', { name: 'Fractions chapter' }),
+    ).toBeInTheDocument()
+  })
+
+  it('redirects a material detail to /login when signed out', async () => {
+    renderAt('/materials/mat-1')
+    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
   })
 
   it('shows the Teachers page for an admin', async () => {

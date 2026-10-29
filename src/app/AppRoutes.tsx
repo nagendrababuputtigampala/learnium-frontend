@@ -8,6 +8,7 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import HomePage from '../pages/HomePage'
 import JoinPage from '../pages/JoinPage'
 import LoginPage from '../pages/LoginPage'
+import MaterialDetailPage from '../pages/MaterialDetailPage'
 import MaterialsPage from '../pages/MaterialsPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import SetPasswordPage from '../pages/SetPasswordPage'
@@ -27,6 +28,10 @@ export default function AppRoutes() {
           <Route path="/" element={<HomePage />} />
           <Route path="/batches" element={<BatchesPage />} />
           <Route path="/materials" element={<MaterialsPage />} />
+          <Route
+            path="/materials/:materialId"
+            element={<MaterialDetailPage />}
+          />
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<CentreOverviewPage />} />
             <Route path="/admin/teachers" element={<TeachersPage />} />
