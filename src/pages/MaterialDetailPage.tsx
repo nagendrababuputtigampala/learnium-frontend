@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import GenerateQuestionsDialog from '../components/generation/GenerateQuestionsDialog'
+import GeneratedDraftsSection from '../components/generation/GeneratedDraftsSection'
 import ExtractionStatusChip from '../components/materials/ExtractionStatusChip'
 import { getApiErrorMessage } from '../lib/api'
+import { scrollToDrafts } from '../lib/generation'
 import {
   extractionStatusInfo,
   useDeleteMaterial,
@@ -14,6 +17,7 @@ export default function MaterialDetailPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [generateOpen, setGenerateOpen] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const materialQuery = useMaterial(materialId)
@@ -60,6 +64,12 @@ export default function MaterialDetailPage() {
 
   const material = materialQuery.data
   const statusInfo = extractionStatusInfo(material.extractionStatus)
+  const canGenerate = material.extractionStatus === 'OK'
+
+  const onViewDrafts = () => {
+    setGenerateOpen(false)
+    scrollToDrafts()
+  }
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -112,6 +122,23 @@ export default function MaterialDetailPage() {
           {statusInfo.explanation}
         </p>
 
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={!canGenerate}
+            onClick={() => setGenerateOpen(true)}
+            className="rounded-full bg-marigold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-95 disabled:opacity-50"
+          >
+            Generate questions
+          </button>
+          {!canGenerate && (
+            <p className="text-sm text-ink/60">
+              Questions can be generated once the chapter text reads as
+              Ready.
+            </p>
+          )}
+        </div>
+
         <h2 className="mt-6 font-display text-base font-bold">
           Extracted text
         </h2>
@@ -157,6 +184,16 @@ export default function MaterialDetailPage() {
           )}
         </div>
       </section>
+
+      <GeneratedDraftsSection materialId={materialId} />
+
+      {generateOpen && (
+        <GenerateQuestionsDialog
+          material={material}
+          onClose={() => setGenerateOpen(false)}
+          onViewDrafts={onViewDrafts}
+        />
+      )}
     </div>
   )
 }

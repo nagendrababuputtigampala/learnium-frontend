@@ -1,3 +1,101 @@
+# Progress — feature/ai-generation (frontend, M3 branch 2)
+
+Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).
+
+- Done H1 (API + types + hooks): generation types in lib/api.ts
+  (QuestionTypeCode, GenerationDifficulty, GenerationJobStatus,
+  GenerationFailureKind, Topic, GenerateJobRequest, GenerationJobDto,
+  GenerationJobDetailDto, GenerationTypeResult, GeneratedQuestionDto
+  with payload: unknown so renderers must defend). New lib/generation.ts:
+  API functions (create job, poll job, paged material questions, topics
+  of a grade-subject), centre-scoped keys (['generation-jobs', centreId,
+  jobId] and ['materials', centreId, 'questions', materialId, page];
+  topics keyed by gradeSubjectId as master data), hooks — useTopics
+  (gated on a non-empty id), useGenerationJob (refetchInterval 2s while
+  status is unknown/PENDING/RUNNING, stops at a terminal state),
+  useCreateGenerationJob, useMaterialQuestions — and presentation
+  helpers: questionTypeInfo (theme chips per type; NUMERIC uses the
+  palette's bright indigo since the theme has no numeric colour),
+  dropReasonLabel (plain words + fallback), failureKindInfo (headline,
+  explanation, retryable flag mirroring the backend's transient kinds),
+  generationJobPhase (queued/running/retrying/succeeded/failed — a
+  PENDING/RUNNING job carrying a failureKind is mid-retry). Payload
+  shapes confirmed from the backend DraftQuestionFactory: MCQ
+  {stem, options[{id a–d, text}]} + correctRef = option id;
+  FILL_BLANK {stemWithBlank, answer}; FLASHCARD {front, back};
+  NUMERIC {stem, answerValue, tolerance, unit, workedSolution} +
+  correctRef a JSON string; WRITTEN {stem, modelAnswer, rubric[{id
+  crit-N, criterion, maxScore}]}. Retry semantics confirmed from
+  GenerationWorker: MAX_ATTEMPTS 2; MODEL_ERROR / MALFORMED_RESPONSE /
+  TRUNCATED reschedule to PENDING with the kind recorded; SAFETY_
+  REFUSAL / ZERO_VALID / MATERIAL_DELETED are terminal. NOTE: the
+  topics endpoint (GET /master/grade-subjects/{id}/topics) is NOT yet
+  in the backend clone's CatalogController — built against the agreed
+  spec [{topicId, name}]; flagged for the branch report. 17 lib tests
+  incl. fake-timer polling transitions (PENDING→RUNNING→SUCCEEDED and
+  stop-at-FAILED) verified stable across repeated runs.
+- Done H2/H3 (generate dialog + job view): components/generation/
+  QuestionTypeChip; GenerateQuestionsDialog (mirrors the AddMaterial
+  dialog shell) — topic select from the material's grade-subject,
+  difficulty select (Medium default), five per-type count inputs
+  clamped 0–40 with a live total; validation in priority order (topic
+  → at least one → total ≤ 40) disables Generate with the reason
+  shown; topics loading/error/empty states handled; create errors
+  surface the backend envelope message (LRN-GEN-*); on 202 the dialog
+  transitions to GenerationJobView (footer action renamed "Done" so
+  it never duplicates the header's Close label). GenerationJobView —
+  queued/running (with "Attempt N of 2")/retrying/succeeded/failed
+  phases from generationJobPhase; retrying distinguishes "will retry
+  automatically" (back to PENDING) from "Retrying now" (RUNNING
+  again); per-type results table (rows for types with requested > 0
+  or received > 0) with drop counts and plain-word reasons; token
+  usage line rendering only the recorded parts; on SUCCEEDED it
+  invalidates ['materials', centreId, 'questions', materialId] and
+  offers "View drafts". Small H1 amendment folded in: failureKindInfo
+  now accepts null and returns a generic failure, so the view needs
+  no unreachable null guards. 27 component tests (11 dialog + 16 job
+  view) incl. polling-driven transitions and the invalidation key.
+- Done H4 (draft preview + detail-page integration): components/
+  generation/DraftQuestionCard — defensive per-type renderers over
+  the persisted payload contract (every field type-checked; any
+  mismatch, a non-object payload, or an unknown type code renders a
+  generic fallback card with a neutral "Question" chip — the
+  branch-1 legacy-null lesson); MCQ marks the option whose id equals
+  correctRef; NUMERIC shows value ± tolerance + unit + worked
+  solution; WRITTEN shows the model answer and rubric criteria with
+  max scores (mark/marks wording); every card carries a provenance
+  footer (provider · model · prompt version · date). Generated
+  DraftsSection (id="generated-drafts") — paged read-only preview on
+  the material detail page with the branch-1 pagination pattern and
+  an honest empty state; NO edit/approve actions (M4). Detail page:
+  "Generate questions" button enabled only when extractionStatus is
+  OK, otherwise disabled with the one-line reason; lib gained
+  isQuestionTypeCode + scrollToDrafts helpers (the job view's success
+  invalidation refreshes the section; "View drafts" closes the
+  dialog and scrolls to it). Existing detail/routes tests updated to
+  serve the new questions endpoint. 40 new tests across card,
+  section and page files incl. ~25 malformed-payload cases and the
+  end-to-end generate → succeed → view-drafts flow.
+- Branch complete: 317 tests (was 244 at branch 1), 100% statements/
+  branches/functions/lines, build green — full gate run twice from a
+  clean state. NOT pushed.
+- Follow-up (add-a-topic in the generate dialog): the topic picker no
+  longer dead-ends on a grade-subject with no topics. lib/generation
+  gained createTopic + useCreateTopic (POST /master/grade-subjects/
+  {id}/topics {name}; 201-created and 200-existing treated alike; the
+  mutation invalidates the topics query) and MAX_TOPIC_NAME_LENGTH.
+  The dialog preselects the topic when the list holds exactly one
+  (a ref guards against overriding a teacher's explicit choice on
+  refetch), offers a "+ New topic" inline form (name input + Add;
+  Enter adds without submitting the generate form; blank or
+  >200-char names blocked with a hint; a failed add keeps the typed
+  name and shows the backend message), and renders the empty state
+  as an invitation with the add form already open. A successful add
+  selects the created/existing topic and collapses the form.
+- Failing tests: none.
+
+---
+
 # Progress — feature/pdf-extraction (frontend, M3 branch 1)
 
 Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
