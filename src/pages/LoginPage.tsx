@@ -1,8 +1,49 @@
-import type { FormEvent } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { Link, useNavigate } from 'react-router-dom'
+import { z } from 'zod'
+import { getApiErrorMessage } from '../lib/api'
+import { useAuth } from '../lib/auth'
+
+const loginSchema = z.object({
+  email: z.string().email('Enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
+
+const inputClassName =
+  'w-full rounded-lg border border-card-border px-3 py-2 text-sm outline-none focus:border-indigo-bright focus:ring-2 focus:ring-indigo-bright/30'
 
 export default function LoginPage() {
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  })
+
+  const onSubmit = async (values: LoginFormValues) => {
+    setErrorMessage(null)
+    try {
+      const user = await login(values.email, values.password)
+      navigate(user.role === 'CENTRE_ADMIN' ? '/admin' : '/', {
+        replace: true,
+      })
+    } catch (error) {
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          'Sign-in failed. Please check your details and try again.',
+        ),
+      )
+    }
   }
 
   return (
@@ -16,19 +57,31 @@ export default function LoginPage() {
             Sign in to Learn<span className="text-marigold">ium</span>
           </h1>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {errorMessage !== null && (
+            <p
+              role="alert"
+              className="rounded-lg bg-rose-weak/10 px-3 py-2 text-sm text-rose-weak"
+            >
+              {errorMessage}
+            </p>
+          )}
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium">
               Email
             </label>
             <input
               id="email"
-              name="email"
               type="email"
               autoComplete="email"
-              required
-              className="w-full rounded-lg border border-card-border px-3 py-2 text-sm outline-none focus:border-indigo-bright focus:ring-2 focus:ring-indigo-bright/30"
+              className={inputClassName}
+              {...register('email')}
             />
+            {errors.email && (
+              <p role="alert" className="mt-1 text-sm text-rose-weak">
+                {errors.email.message}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -39,20 +92,39 @@ export default function LoginPage() {
             </label>
             <input
               id="password"
-              name="password"
               type="password"
               autoComplete="current-password"
-              required
-              className="w-full rounded-lg border border-card-border px-3 py-2 text-sm outline-none focus:border-indigo-bright focus:ring-2 focus:ring-indigo-bright/30"
+              className={inputClassName}
+              {...register('password')}
             />
+            {errors.password && (
+              <p role="alert" className="mt-1 text-sm text-rose-weak">
+                {errors.password.message}
+              </p>
+            )}
           </div>
           <button
             type="submit"
-            className="w-full rounded-full bg-marigold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-95"
+            disabled={isSubmitting}
+            className="w-full rounded-full bg-marigold px-5 py-2.5 text-sm font-semibold text-ink transition hover:brightness-95 disabled:opacity-60"
           >
             Sign in
           </button>
         </form>
+        <div className="mt-6 flex flex-col gap-2 text-center text-sm">
+          <Link
+            to="/forgot-password"
+            className="font-medium text-indigo-primary hover:underline"
+          >
+            Forgot your password?
+          </Link>
+          <Link
+            to="/join"
+            className="font-medium text-indigo-primary hover:underline"
+          >
+            Joining a test as a student?
+          </Link>
+        </div>
       </div>
     </div>
   )

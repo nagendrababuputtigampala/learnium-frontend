@@ -1,3 +1,44 @@
+# Progress — feature/auth-roles (frontend, M2)
+
+- Done S5 (auth wiring & landing): api client with in-memory access token,
+  localStorage refresh token, single-flight 401 refresh + retry (auth
+  endpoints excluded), session-expired hook; AuthProvider (restore via
+  refresh + /me, login/logout/studentSession); route guards
+  (ProtectedRoute/AdminRoute); Login wired with RHF+Zod and role landing
+  (admin → /admin, teacher → /); ForgotPassword and SetPassword
+  (invite/reset) pages; Teacher Home greets the user and lists live
+  batches; Centre Overview at /admin with counts + quick links; sidebar
+  hides admin-only entries (Teachers, Centre Settings) from teachers and
+  gained user footer + sign out; Vite dev proxy /api → localhost:8080.
+  Build green; 100% coverage on all files.
+- Design decisions: M0 skeleton tests that encoded pre-auth behaviour
+  (unguarded routes, static Teacher Home content, placeholder login
+  submit) were rewritten to the M2 behaviour with equal or better
+  coverage. Deactivate confirmations use an inline two-step button
+  (no window.confirm) — deterministic in tests and better UX.
+- Done S6 (admin & roster UI + student join): TeachersPage (paged table,
+  invite form → invite-sent notice, inline-confirm deactivate); BatchesPage
+  (batch list, admin create form with grade-subject select, assign/remove
+  teacher, roster expand); RosterPanel (list with status + PIN-locked
+  badges, add single, bulk add one-per-line, reset-PIN, deactivate; PINs
+  from create/reset shown once in a dismissible panel with copy button,
+  never re-fetched); CentreSettingsPage (GET /centre prefilled form, PUT
+  save with success feedback); JoinPage (public, centre → batch selects,
+  name + PIN student session; ?batch=<uuid> preselects the batch and its
+  centre via a lookup across centres); StudentHomePage (greets the student
+  from the real session store, redirects to /join without one). Routes:
+  /batches in the layout, /admin/teachers + /admin/settings behind
+  AdminRoute, /join + /student outside the layout. Final state: build
+  green; 153 tests, 19 files; 100% statements/branches/functions/lines.
+- S6 notes: one timing flake in the full suite (auth logout test, 1s
+  default waitFor under parallel load) fixed by widening that test's
+  waitFor timeouts to 5s; JoinPage lookup reads the loaded centre list
+  via the query's `enabled` gate (no dead fallback branch).
+- Next: none on this branch — M2 frontend complete, awaiting review/merge.
+- Failing tests: none.
+
+---
+
 # Progress — feature/port-domain-model (frontend)
 
 - Done: M0 skeleton — Vite + React + TS, Indigo Scholar tokens, sidebar shell,
