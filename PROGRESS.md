@@ -56,6 +56,14 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   "My Materials"); create responses are read from the DTO's
   `deduplicated` flag (HTTP 200 vs 201 is not distinguished).
 - Failing tests: none.
+- Fix (manual-test bug, 2026-10-28): PDF upload returned 415 —
+  createApiClient pinned an instance-wide Content-Type:
+  application/json, which also made axios JSON-serialize FormData
+  bodies. Pin removed (axios sets application/json itself for
+  plain-object bodies); wire-level regression tests added in
+  api.test.ts (capturing adapter: FormData stays FormData and never
+  application/json; plain objects still send application/json),
+  verified red against the pinned code.
 
 ---
 
