@@ -102,6 +102,13 @@ describe('AddMaterialDialog', () => {
     expect(screen.getByText('0 characters')).toBeInTheDocument()
     await user.type(textarea, 'Hello')
     expect(screen.getByText('5 characters')).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: 'Upload PDF' }))
+    expect(screen.getByRole('tab', { name: 'Upload PDF' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    expect(screen.getByLabelText('Chapter PDF')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Chapter text')).toBeNull()
   })
 
   it('calls onClose from the close and cancel buttons', async () => {
@@ -273,8 +280,8 @@ describe('AddMaterialDialog', () => {
 
   it('disables the submit button while a create is in flight', async () => {
     const user = userEvent.setup()
-    let resolvePost: ((value: { data: typeof materialOk }) => void) | null =
-      null
+    let resolvePost: (value: { data: typeof materialOk }) => void =
+      () => undefined
     mock.post.mockImplementation(
       () =>
         new Promise((resolve) => {
@@ -290,7 +297,7 @@ describe('AddMaterialDialog', () => {
         screen.getByRole('button', { name: 'Add material' }),
       ).toBeDisabled(),
     )
-    resolvePost?.({ data: materialOk })
+    resolvePost({ data: materialOk })
     await waitFor(() =>
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/materials/mat-1',

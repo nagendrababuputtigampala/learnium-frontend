@@ -122,6 +122,19 @@ describe('MaterialDetailPage', () => {
     ).toBeNull()
   })
 
+  it('marks a pasted-text material with the Paste source chip', async () => {
+    renderDetail({
+      ...materialDetailOk,
+      materialId: 'mat-2',
+      title: 'Pasted science notes',
+      sourceType: 'TEXT',
+    })
+    expect(
+      await screen.findByRole('heading', { name: 'Pasted science notes' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Paste')).toBeInTheDocument()
+  })
+
   it('explains what a scanned PDF means and shows no extracted text', async () => {
     renderDetail(materialDetailNoText)
     expect(

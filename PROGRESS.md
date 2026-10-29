@@ -45,7 +45,16 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   opened your existing copy"), and a two-step "Remove from your
   materials" delete that returns to the list. No generation UI —
   that arrives in branch 2. 10 detail tests + 2 route tests.
-- Next: F5 final gate (full coverage run + build).
+- Done F5 (final gate): from a clean state — 24 test files, 237
+  tests, all passing; coverage 100% statements / branches /
+  functions / lines (thresholds enforced); npm run build (tsc +
+  vite) green. M3 branch 1 frontend COMPLETE. Not pushed — bundle
+  handoff per the working agreement.
+- Contract notes: DELETE /materials/{id} is treated as success on
+  any 2xx (the frontend never inspects the body); the sidebar nav
+  label for /materials is "Materials" (renamed from the skeleton's
+  "My Materials"); create responses are read from the DTO's
+  `deduplicated` flag (HTTP 200 vs 201 is not distinguished).
 - Failing tests: none.
 
 ---
