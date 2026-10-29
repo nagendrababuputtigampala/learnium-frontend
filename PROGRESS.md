@@ -13,6 +13,17 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   explanation for all five extraction statuses. Material fixtures
   added. materials.test.tsx: 15 tests (status info, keys, every API
   function incl. FormData contents, every hook incl. invalidation).
+- Done F3 (add material dialog; committed before F2 so the list page
+  commit that imports it stays green): components/materials/
+  AddMaterialDialog — Upload PDF / Paste text tabs over shared title +
+  grade-subject fields, client guards (file required, 20 MB warning
+  before submit, title/grade-subject required, pasted text required
+  with a live character count), backend envelope messages surfaced
+  (LRN-MAT-001 / LRN-MAT-003), submit disabled while in flight, and
+  navigation to the material detail on success — with router state
+  {deduplicated: true} when the backend reports the chapter already
+  existed. 14 dialog tests incl. FormData contents and both create
+  flows.
 - Next: F2 materials list page + routes + nav.
 - Failing tests: none.
 
