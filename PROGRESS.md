@@ -1,3 +1,23 @@
+# Progress — feature/pdf-extraction (frontend, M3 branch 1)
+
+Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
+
+- Done F1 (API + types + queries): MaterialDto / MaterialDetailDto /
+  MaterialSourceType / ExtractionStatus added to lib/api.ts. New
+  lib/materials.ts: API functions (paged list, detail, grade-subjects
+  via the existing /master/grade-subjects, multipart PDF upload,
+  paste-text create, delete), centre-scoped query keys
+  (['materials', centreId, page] and ['materials', centreId, 'detail',
+  id]), TanStack hooks whose mutations invalidate the ['materials']
+  prefix, and extractionStatusInfo — plain-language chip label +
+  explanation for all five extraction statuses. Material fixtures
+  added. materials.test.tsx: 15 tests (status info, keys, every API
+  function incl. FormData contents, every hook incl. invalidation).
+- Next: F2 materials list page + routes + nav.
+- Failing tests: none.
+
+---
+
 # Progress — feature/auth-roles (frontend, M2)
 
 ## Codex fix round 2 (2026-10-28)
