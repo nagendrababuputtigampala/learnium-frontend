@@ -64,6 +64,11 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   api.test.ts (capturing adapter: FormData stays FormData and never
   application/json; plain objects still send application/json),
   verified red against the pinned code.
+- Fix (Codex review F-2, 2026-10-28): nginx.conf set no
+  client_max_body_size, so nginx's 1 MB default would reject
+  material PDFs in deployment well below the app's 20 MB limit.
+  Added `client_max_body_size 21m;` at server level (20 MB product
+  limit + multipart overhead). Config-only.
 
 ---
 
