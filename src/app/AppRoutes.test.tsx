@@ -37,6 +37,11 @@ function seedSession(user: AuthUser) {
     if (url === '/batches') {
       return Promise.resolve({ data: [batchOne] })
     }
+    if (url === '/materials') {
+      return Promise.resolve({
+        data: { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 },
+      })
+    }
     if (url === '/admin/teachers') {
       return Promise.resolve({
         data: { content: [], page: 0, size: 1, totalElements: 2, totalPages: 2 },
@@ -130,6 +135,31 @@ describe('AppRoutes', () => {
     expect(
       await screen.findByRole('heading', { name: 'Batches' }),
     ).toBeInTheDocument()
+  })
+
+  it('shows the Materials page for a signed-in teacher', async () => {
+    seedSession(teacherUser)
+    renderAt('/materials')
+    expect(
+      await screen.findByRole('heading', { name: 'Materials' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Materials' }),
+    ).toHaveAttribute('href', '/materials')
+  })
+
+  it('shows the Materials page for a centre admin', async () => {
+    seedSession(adminUser)
+    renderAt('/materials')
+    expect(
+      await screen.findByRole('heading', { name: 'Materials' }),
+    ).toBeInTheDocument()
+  })
+
+  it('redirects /materials to /login when signed out', async () => {
+    renderAt('/materials')
+    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Materials' })).toBeNull()
   })
 
   it('shows the Teachers page for an admin', async () => {

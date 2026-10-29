@@ -18,7 +18,7 @@ const mockUseAuth = vi.mocked(useAuth)
 
 const COMMON_LABELS = [
   'Home',
-  'My Materials',
+  'Materials',
   'Tests',
   'Question Bank',
   'Batches',

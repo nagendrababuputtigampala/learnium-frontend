@@ -24,7 +24,18 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   {deduplicated: true} when the backend reports the chapter already
   existed. 14 dialog tests incl. FormData contents and both create
   flows.
-- Next: F2 materials list page + routes + nav.
+- Done F2 (materials list page): pages/MaterialsPage — paged cards
+  with title link, grade · subject, source chip (PDF/Paste),
+  ExtractionStatusChip with the honest plain-language labels,
+  extracted character count (or "No extracted text"), added date;
+  Teachers-style Previous/Next pagination; empty state with an
+  "Add your first material" call to action; header "Add material"
+  button opens the F3 dialog. Route /materials inside the protected
+  layout (teacher + admin; signed-out visitors redirect to /login).
+  Sidebar nav label settled as "Materials" (was the skeleton's
+  "My Materials" — for an admin the list is the whole centre's).
+  8 page tests + 3 AppRoutes tests.
+- Next: F4 material detail page.
 - Failing tests: none.
 
 ---
