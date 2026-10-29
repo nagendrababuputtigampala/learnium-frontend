@@ -1,3 +1,44 @@
+# Progress — feature/ai-generation (frontend, M3 branch 2)
+
+Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).
+
+- Done H1 (API + types + hooks): generation types in lib/api.ts
+  (QuestionTypeCode, GenerationDifficulty, GenerationJobStatus,
+  GenerationFailureKind, Topic, GenerateJobRequest, GenerationJobDto,
+  GenerationJobDetailDto, GenerationTypeResult, GeneratedQuestionDto
+  with payload: unknown so renderers must defend). New lib/generation.ts:
+  API functions (create job, poll job, paged material questions, topics
+  of a grade-subject), centre-scoped keys (['generation-jobs', centreId,
+  jobId] and ['materials', centreId, 'questions', materialId, page];
+  topics keyed by gradeSubjectId as master data), hooks — useTopics
+  (gated on a non-empty id), useGenerationJob (refetchInterval 2s while
+  status is unknown/PENDING/RUNNING, stops at a terminal state),
+  useCreateGenerationJob, useMaterialQuestions — and presentation
+  helpers: questionTypeInfo (theme chips per type; NUMERIC uses the
+  palette's bright indigo since the theme has no numeric colour),
+  dropReasonLabel (plain words + fallback), failureKindInfo (headline,
+  explanation, retryable flag mirroring the backend's transient kinds),
+  generationJobPhase (queued/running/retrying/succeeded/failed — a
+  PENDING/RUNNING job carrying a failureKind is mid-retry). Payload
+  shapes confirmed from the backend DraftQuestionFactory: MCQ
+  {stem, options[{id a–d, text}]} + correctRef = option id;
+  FILL_BLANK {stemWithBlank, answer}; FLASHCARD {front, back};
+  NUMERIC {stem, answerValue, tolerance, unit, workedSolution} +
+  correctRef a JSON string; WRITTEN {stem, modelAnswer, rubric[{id
+  crit-N, criterion, maxScore}]}. Retry semantics confirmed from
+  GenerationWorker: MAX_ATTEMPTS 2; MODEL_ERROR / MALFORMED_RESPONSE /
+  TRUNCATED reschedule to PENDING with the kind recorded; SAFETY_
+  REFUSAL / ZERO_VALID / MATERIAL_DELETED are terminal. NOTE: the
+  topics endpoint (GET /master/grade-subjects/{id}/topics) is NOT yet
+  in the backend clone's CatalogController — built against the agreed
+  spec [{topicId, name}]; flagged for the branch report. 17 lib tests
+  incl. fake-timer polling transitions (PENDING→RUNNING→SUCCEEDED and
+  stop-at-FAILED) verified stable across repeated runs.
+- Next: H2/H3 (generate dialog + job view), then H4 (draft preview).
+- Failing tests: none.
+
+---
+
 # Progress — feature/pdf-extraction (frontend, M3 branch 1)
 
 Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
