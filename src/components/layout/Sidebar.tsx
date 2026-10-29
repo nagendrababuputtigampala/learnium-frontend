@@ -10,7 +10,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', to: '/', end: true },
-  { label: 'My Materials', to: '/materials' },
+  { label: 'Materials', to: '/materials' },
   { label: 'Tests', to: '/tests' },
   { label: 'Question Bank', to: '/question-bank' },
   { label: 'Teachers', to: '/admin/teachers', adminOnly: true },

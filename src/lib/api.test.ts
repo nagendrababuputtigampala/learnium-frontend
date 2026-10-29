@@ -37,11 +37,11 @@ describe('api client', () => {
     expect(API_BASE_URL).toBe('/api/v1')
   })
 
-  it('creates a client with the given base URL and JSON content type', () => {
+  it('creates a client with the given base URL and no pinned content type', () => {
     const client = createApiClient('https://example.test/api/v9')
     expect(client.defaults.baseURL).toBe('https://example.test/api/v9')
     const headers = AxiosHeaders.from(client.defaults.headers)
-    expect(headers.get('Content-Type')).toBe('application/json')
+    expect(headers.get('Content-Type')).toBeUndefined()
   })
 
   it('exposes a shared client bound to the module base URL', () => {
@@ -61,6 +61,73 @@ describe('api client', () => {
       vi.unstubAllEnvs()
       vi.resetModules()
     }
+  })
+})
+
+describe('api client request content types', () => {
+  beforeEach(() => {
+    setAccessToken(null)
+  })
+
+  afterEach(() => {
+    setAccessToken(null)
+  })
+
+  function capturingClient(captured: InternalAxiosRequestConfig[]) {
+    const client = createApiClient('https://example.test/api/v1')
+    client.defaults.adapter = (config) => {
+      captured.push(config)
+      return Promise.resolve(okResponse(config))
+    }
+    return client
+  }
+
+  it('does not force an application/json content type onto FormData posts', async () => {
+    setAccessToken('access-1')
+    const captured: InternalAxiosRequestConfig[] = []
+    const client = capturingClient(captured)
+    const formData = new FormData()
+    formData.append(
+      'file',
+      new File(['%PDF-1.7'], 'chapter.pdf', { type: 'application/pdf' }),
+    )
+    formData.append('title', 'Fractions')
+    formData.append('gradeSubjectId', 'gs-1')
+
+    await client.post('/materials', formData)
+
+    expect(captured).toHaveLength(1)
+    const headers = AxiosHeaders.from(captured[0].headers)
+    // Never the JSON pin that made the backend reject the PDF upload
+    // with 415 Unsupported Media Type. (From here, the real XHR
+    // adapter clears the content type for FormData bodies and the
+    // browser generates multipart/form-data with its boundary.)
+    expect(headers.get('Content-Type')).not.toBe('application/json')
+    // The body must reach the adapter as FormData. Under the pin,
+    // axios JSON-serialized it, because the pinned header claimed the
+    // request was JSON — the actual cause of the 415.
+    expect(captured[0].data).toBe(formData)
+    expect(headers.get('Authorization')).toBe('Bearer access-1')
+  })
+
+  it('sends application/json for plain-object posts', async () => {
+    setAccessToken('access-1')
+    const captured: InternalAxiosRequestConfig[] = []
+    const client = capturingClient(captured)
+
+    await client.post('/materials/text', {
+      title: 'Fractions',
+      gradeSubjectId: 'gs-1',
+      text: 'Half of a pizza is one of two equal parts.',
+    })
+
+    expect(captured).toHaveLength(1)
+    const headers = AxiosHeaders.from(captured[0].headers)
+    expect(headers.get('Content-Type')).toBe('application/json')
+    expect(captured[0].data).toBe(
+      '{"title":"Fractions","gradeSubjectId":"gs-1","text":"Half of a pizza is one of two equal parts."}',
+    )
+    expect(headers.get('Authorization')).toBe('Bearer access-1')
   })
 })
 

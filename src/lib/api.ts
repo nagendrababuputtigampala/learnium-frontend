@@ -109,6 +109,36 @@ export interface CentreDto {
   contactEmail: string
 }
 
+export type MaterialSourceType = 'PDF' | 'TEXT'
+
+export type ExtractionStatus =
+  | 'OK'
+  | 'NO_TEXT'
+  | 'UNUSABLE_TEXT'
+  | 'OVER_LIMIT'
+  | 'EXTRACTION_FAILED'
+
+export interface MaterialDto {
+  materialId: string
+  title: string
+  gradeSubjectId: string
+  gradeCode: string
+  gradeName: string
+  subjectName: string
+  sourceType: MaterialSourceType
+  // Null for materials added before extraction existed (pre-V10 rows
+  // have no status); the UI renders a "Not extracted" fallback.
+  extractionStatus: ExtractionStatus | null
+  extractedChars: number | null
+  contentHash: string | null
+  deduplicated: boolean
+  createdAt: string
+}
+
+export interface MaterialDetailDto extends MaterialDto {
+  extractedText: string | null
+}
+
 export interface PublicCentre {
   centreId: string
   name: string
@@ -312,12 +342,12 @@ function isNoRefreshPath(url: string | undefined): boolean {
 
 /** Creates an axios client bound to the given API base URL. */
 export function createApiClient(baseURL: string): AxiosInstance {
-  const client = axios.create({
-    baseURL,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+  // No instance-wide Content-Type is pinned: axios sets
+  // application/json automatically for plain-object bodies, while a
+  // pinned header would also be forced onto FormData posts, breaking
+  // multipart endpoints — the browser must generate the
+  // multipart/form-data header (with its boundary) at send time.
+  const client = axios.create({ baseURL })
 
   client.interceptors.request.use((config) => {
     const token = getAccessToken()

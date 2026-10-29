@@ -5,6 +5,8 @@ import type {
   CentreDto,
   GradeSubject,
   LoginResponse,
+  MaterialDetailDto,
+  MaterialDto,
   RosterStudent,
   StudentProfile,
   TeacherDto,
@@ -153,6 +155,97 @@ export const rosterStudentInactive: RosterStudent = {
   fullName: 'Meera',
   status: 'INACTIVE',
   pinLocked: false,
+}
+
+export const materialOk: MaterialDto = {
+  materialId: 'mat-1',
+  title: 'Fractions chapter',
+  gradeSubjectId: 'gs-1',
+  gradeCode: 'G8',
+  gradeName: 'Grade 8',
+  subjectName: 'Mathematics',
+  sourceType: 'PDF',
+  extractionStatus: 'OK',
+  extractedChars: 12340,
+  contentHash: 'hash-1',
+  deduplicated: false,
+  createdAt: '2026-10-20T09:00:00Z',
+}
+
+export const materialText: MaterialDto = {
+  materialId: 'mat-2',
+  title: 'Pasted science notes',
+  gradeSubjectId: 'gs-2',
+  gradeCode: 'G7',
+  gradeName: 'Grade 7',
+  subjectName: 'Science',
+  sourceType: 'TEXT',
+  extractionStatus: 'OK',
+  extractedChars: 640,
+  contentHash: 'hash-2',
+  deduplicated: false,
+  createdAt: '2026-10-21T09:00:00Z',
+}
+
+export const materialNoText: MaterialDto = {
+  ...materialOk,
+  materialId: 'mat-3',
+  title: 'Scanned worksheet',
+  extractionStatus: 'NO_TEXT',
+  extractedChars: 0,
+  contentHash: null,
+}
+
+export const materialUnusable: MaterialDto = {
+  ...materialOk,
+  materialId: 'mat-4',
+  title: 'Garbled export',
+  extractionStatus: 'UNUSABLE_TEXT',
+  extractedChars: 87,
+  contentHash: 'hash-4',
+}
+
+export const materialOverLimit: MaterialDto = {
+  ...materialOk,
+  materialId: 'mat-5',
+  title: 'Whole textbook',
+  extractionStatus: 'OVER_LIMIT',
+  extractedChars: null,
+  contentHash: 'hash-5',
+}
+
+export const materialFailed: MaterialDto = {
+  ...materialOk,
+  materialId: 'mat-6',
+  title: 'Corrupt file',
+  extractionStatus: 'EXTRACTION_FAILED',
+  extractedChars: null,
+  contentHash: null,
+}
+
+/** Legacy material added before extraction existed: no status, no text. */
+export const materialLegacy: MaterialDto = {
+  ...materialOk,
+  materialId: 'mat-7',
+  title: 'Legacy chapter',
+  extractionStatus: null,
+  extractedChars: null,
+  contentHash: null,
+}
+
+export const materialDetailOk: MaterialDetailDto = {
+  ...materialOk,
+  extractedText: 'A fraction is a part of a whole.',
+}
+
+export const materialDetailNoText: MaterialDetailDto = {
+  ...materialNoText,
+  extractedText: null,
+}
+
+export const materialDetailLegacy: MaterialDetailDto = {
+  ...materialLegacy,
+  extractedText: null,
 }
 
 export const centreDto: CentreDto = {

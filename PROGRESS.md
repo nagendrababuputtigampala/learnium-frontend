@@ -1,3 +1,90 @@
+# Progress — feature/pdf-extraction (frontend, M3 branch 1)
+
+Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
+
+- Done F1 (API + types + queries): MaterialDto / MaterialDetailDto /
+  MaterialSourceType / ExtractionStatus added to lib/api.ts. New
+  lib/materials.ts: API functions (paged list, detail, grade-subjects
+  via the existing /master/grade-subjects, multipart PDF upload,
+  paste-text create, delete), centre-scoped query keys
+  (['materials', centreId, page] and ['materials', centreId, 'detail',
+  id]), TanStack hooks whose mutations invalidate the ['materials']
+  prefix, and extractionStatusInfo — plain-language chip label +
+  explanation for all five extraction statuses. Material fixtures
+  added. materials.test.tsx: 15 tests (status info, keys, every API
+  function incl. FormData contents, every hook incl. invalidation).
+- Done F3 (add material dialog; committed before F2 so the list page
+  commit that imports it stays green): components/materials/
+  AddMaterialDialog — Upload PDF / Paste text tabs over shared title +
+  grade-subject fields, client guards (file required, 20 MB warning
+  before submit, title/grade-subject required, pasted text required
+  with a live character count), backend envelope messages surfaced
+  (LRN-MAT-001 / LRN-MAT-003), submit disabled while in flight, and
+  navigation to the material detail on success — with router state
+  {deduplicated: true} when the backend reports the chapter already
+  existed. 14 dialog tests incl. FormData contents and both create
+  flows.
+- Done F2 (materials list page): pages/MaterialsPage — paged cards
+  with title link, grade · subject, source chip (PDF/Paste),
+  ExtractionStatusChip with the honest plain-language labels,
+  extracted character count (or "No extracted text"), added date;
+  Teachers-style Previous/Next pagination; empty state with an
+  "Add your first material" call to action; header "Add material"
+  button opens the F3 dialog. Route /materials inside the protected
+  layout (teacher + admin; signed-out visitors redirect to /login).
+  Sidebar nav label settled as "Materials" (was the skeleton's
+  "My Materials" — for an admin the list is the whole centre's).
+  8 page tests + 3 AppRoutes tests.
+- Done F4 (material detail page): pages/MaterialDetailPage at
+  /materials/:materialId — metadata header (title, grade · subject,
+  source chip, status chip, character count, added date), the
+  status explanation with what-to-do-next wording, the extracted
+  text in a scrollable preformatted block (or an honest "no
+  extracted text" note), the deduplicated banner when arriving with
+  router state {deduplicated: true} ("You already had this chapter —
+  opened your existing copy"), and a two-step "Remove from your
+  materials" delete that returns to the list. No generation UI —
+  that arrives in branch 2. 10 detail tests + 2 route tests.
+- Done F5 (final gate): from a clean state — 24 test files, 237
+  tests, all passing; coverage 100% statements / branches /
+  functions / lines (thresholds enforced); npm run build (tsc +
+  vite) green. M3 branch 1 frontend COMPLETE. Not pushed — bundle
+  handoff per the working agreement.
+- Contract notes: DELETE /materials/{id} is treated as success on
+  any 2xx (the frontend never inspects the body); the sidebar nav
+  label for /materials is "Materials" (renamed from the skeleton's
+  "My Materials"); create responses are read from the DTO's
+  `deduplicated` flag (HTTP 200 vs 201 is not distinguished).
+- Failing tests: none.
+- Fix (manual-test bug, 2026-10-28): PDF upload returned 415 —
+  createApiClient pinned an instance-wide Content-Type:
+  application/json, which also made axios JSON-serialize FormData
+  bodies. Pin removed (axios sets application/json itself for
+  plain-object bodies); wire-level regression tests added in
+  api.test.ts (capturing adapter: FormData stays FormData and never
+  application/json; plain objects still send application/json),
+  verified red against the pinned code.
+- Fix (Codex review F-2, 2026-10-28): nginx.conf set no
+  client_max_body_size, so nginx's 1 MB default would reject
+  material PDFs in deployment well below the app's 20 MB limit.
+  Added `client_max_body_size 21m;` at server level (20 MB product
+  limit + multipart overhead). Config-only.
+- Fix (Codex review F-4, 2026-10-28): legacy (pre-V10) materials
+  have a null extractionStatus, but the frontend type was
+  non-nullable and extractionStatusInfo did a bare record lookup —
+  null came back undefined and the status chip threw (detail page
+  had the same assumption). MaterialDto/MaterialDetailDto now type
+  the status as ExtractionStatus | null; extractionStatusInfo
+  accepts null and returns a "Not extracted" fallback (neutral chip
+  + explanation that the material predates extraction and the
+  chapter should be added again so its text can be read); the chip
+  prop is nullable too. New fixtures (materialLegacy,
+  materialDetailLegacy) and tests: null status info, chip render
+  for null, list row and detail page for a legacy material — chip
+  and info tests verified red against the old lookup.
+
+---
+
 # Progress — feature/auth-roles (frontend, M2)
 
 ## Codex fix round 2 (2026-10-28)
