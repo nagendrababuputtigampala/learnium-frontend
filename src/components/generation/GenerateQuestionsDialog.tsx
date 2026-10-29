@@ -1,4 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react'
 import {
   getApiErrorMessage,
   type GenerationDifficulty,
@@ -7,8 +13,10 @@ import {
 } from '../../lib/api'
 import {
   MAX_QUESTIONS_PER_JOB,
+  MAX_TOPIC_NAME_LENGTH,
   QUESTION_TYPE_ORDER,
   useCreateGenerationJob,
+  useCreateTopic,
   useTopics,
 } from '../../lib/generation'
 import GenerationJobView from './GenerationJobView'
@@ -47,11 +55,70 @@ export default function GenerateQuestionsDialog({
     useState<GenerationDifficulty>('MEDIUM')
   const [jobId, setJobId] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [addingTopic, setAddingTopic] = useState(false)
+  const [newTopicName, setNewTopicName] = useState('')
+  const [addTopicError, setAddTopicError] = useState<string | null>(null)
+  // Set once the teacher has made an explicit topic choice (picked
+  // from the list or added a new one) so the single-topic shortcut
+  // below never overrides it on a later refetch.
+  const topicChoiceMadeRef = useRef(false)
 
   const topicsQuery = useTopics(material.gradeSubjectId)
   const createJob = useCreateGenerationJob()
+  const createTopic = useCreateTopic()
 
   const topics = topicsQuery.data ?? []
+
+  // A grade-subject with exactly one topic leaves nothing to choose:
+  // preselect it, unless the teacher has already made a choice.
+  useEffect(() => {
+    if (
+      topics.length === 1 &&
+      topicId === '' &&
+      !topicChoiceMadeRef.current
+    ) {
+      topicChoiceMadeRef.current = true
+      setTopicId(topics[0].topicId)
+    }
+  }, [topics, topicId])
+
+  const topicsEmpty = topicsQuery.isSuccess && topics.length === 0
+  const showAddTopicForm = addingTopic || topicsEmpty
+  const trimmedTopicName = newTopicName.trim()
+  const newTopicTooLong = newTopicName.length > MAX_TOPIC_NAME_LENGTH
+  const addTopicDisabled =
+    trimmedTopicName === '' || newTopicTooLong || createTopic.isPending
+
+  const onAddTopic = () => {
+    if (addTopicDisabled) {
+      return
+    }
+    setAddTopicError(null)
+    createTopic.mutate(
+      { gradeSubjectId: material.gradeSubjectId, name: trimmedTopicName },
+      {
+        onSuccess: (topic) => {
+          topicChoiceMadeRef.current = true
+          setTopicId(topic.topicId)
+          setAddingTopic(false)
+          setNewTopicName('')
+        },
+        onError: (error) => {
+          setAddTopicError(
+            getApiErrorMessage(error, 'Could not add the topic.'),
+          )
+        },
+      },
+    )
+  }
+
+  const onNewTopicKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      // Enter adds the topic; it must not submit the generate form.
+      event.preventDefault()
+      onAddTopic()
+    }
+  }
   const total = QUESTION_TYPE_ORDER.reduce(
     (sum, type) => sum + counts[type],
     0,
@@ -177,7 +244,10 @@ export default function GenerateQuestionsDialog({
                   className={inputClassName}
                   value={topicId}
                   disabled={topicsQuery.isPending}
-                  onChange={(event) => setTopicId(event.target.value)}
+                  onChange={(event) => {
+                    topicChoiceMadeRef.current = true
+                    setTopicId(event.target.value)
+                  }}
                 >
                   <option value="">
                     {topicsQuery.isPending
@@ -190,10 +260,63 @@ export default function GenerateQuestionsDialog({
                     </option>
                   ))}
                 </select>
-                {topicsQuery.isSuccess && topics.length === 0 && (
+                {topicsEmpty && (
                   <p className="mt-1 text-sm text-ink/60">
-                    There are no topics for this grade and subject yet.
+                    No topics yet for this grade and subject — add the
+                    chapter’s topic.
                   </p>
+                )}
+                {showAddTopicForm ? (
+                  <div className="mt-3">
+                    <label
+                      htmlFor="generate-new-topic"
+                      className="mb-1 block text-sm font-medium"
+                    >
+                      New topic name
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        id="generate-new-topic"
+                        className={inputClassName}
+                        value={newTopicName}
+                        placeholder="e.g. Fractions"
+                        onChange={(event) =>
+                          setNewTopicName(event.target.value)
+                        }
+                        onKeyDown={onNewTopicKeyDown}
+                      />
+                      <button
+                        type="button"
+                        disabled={addTopicDisabled}
+                        onClick={onAddTopic}
+                        className="shrink-0 rounded-full bg-indigo-primary px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+                      >
+                        Add topic
+                      </button>
+                    </div>
+                    {newTopicTooLong && (
+                      <p className="mt-1 text-sm text-rose-weak">
+                        Topic names are limited to{' '}
+                        {MAX_TOPIC_NAME_LENGTH} characters.
+                      </p>
+                    )}
+                    {addTopicError !== null && (
+                      <p
+                        role="alert"
+                        className="mt-1 text-sm text-rose-weak"
+                      >
+                        {addTopicError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddingTopic(true)}
+                    className="mt-2 text-sm font-semibold text-indigo-primary hover:underline"
+                  >
+                    + New topic
+                  </button>
                 )}
               </div>
               <div>

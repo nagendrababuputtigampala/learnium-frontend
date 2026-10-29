@@ -79,6 +79,19 @@ Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).
 - Branch complete: 317 tests (was 244 at branch 1), 100% statements/
   branches/functions/lines, build green — full gate run twice from a
   clean state. NOT pushed.
+- Follow-up (add-a-topic in the generate dialog): the topic picker no
+  longer dead-ends on a grade-subject with no topics. lib/generation
+  gained createTopic + useCreateTopic (POST /master/grade-subjects/
+  {id}/topics {name}; 201-created and 200-existing treated alike; the
+  mutation invalidates the topics query) and MAX_TOPIC_NAME_LENGTH.
+  The dialog preselects the topic when the list holds exactly one
+  (a ref guards against overriding a teacher's explicit choice on
+  refetch), offers a "+ New topic" inline form (name input + Add;
+  Enter adds without submitting the generate form; blank or
+  >200-char names blocked with a hint; a failed add keeps the typed
+  name and shows the backend message), and renders the empty state
+  as an invitation with the add form already open. A successful add
+  selects the created/existing topic and collapses the form.
 - Failing tests: none.
 
 ---

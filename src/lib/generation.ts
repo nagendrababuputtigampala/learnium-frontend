@@ -1,4 +1,8 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   apiClient,
   type GeneratedQuestionDto,
@@ -18,6 +22,9 @@ import { useAuth } from './auth'
 
 /** Hard cap on questions per generation job (matches the backend). */
 export const MAX_QUESTIONS_PER_JOB = 40
+
+/** Maximum length of a topic name (matches the backend validation). */
+export const MAX_TOPIC_NAME_LENGTH = 200
 
 /** The backend executes a job at most twice (first try + one retry). */
 export const MAX_GENERATION_ATTEMPTS = 2
@@ -235,6 +242,23 @@ export async function fetchTopics(
   return response.data
 }
 
+/**
+ * Creates a topic under a grade-subject, or returns the existing one
+ * when the name is already taken — the backend answers 201 for a
+ * fresh topic and 200 for an existing one, with the same body either
+ * way, so callers can treat both as success.
+ */
+export async function createTopic(
+  gradeSubjectId: string,
+  name: string,
+): Promise<Topic> {
+  const response = await apiClient.post<Topic>(
+    `/master/grade-subjects/${gradeSubjectId}/topics`,
+    { name },
+  )
+  return response.data
+}
+
 /* ------------------------------------------------------------------ */
 /* Query keys (centre-scoped, like the other centre-owned resources)   */
 /* ------------------------------------------------------------------ */
@@ -285,6 +309,19 @@ export function useGenerationJob(jobId: string | null) {
         status === 'RUNNING'
         ? JOB_POLL_INTERVAL_MS
         : false
+    },
+  })
+}
+
+export function useCreateTopic() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { gradeSubjectId: string; name: string }) =>
+      createTopic(input.gradeSubjectId, input.name),
+    onSuccess: (_topic, input) => {
+      void queryClient.invalidateQueries({
+        queryKey: topicsQueryKey(input.gradeSubjectId),
+      })
     },
   })
 }

@@ -43,6 +43,34 @@ function serveTopics(data: unknown = topics) {
   })
 }
 
+/** Serves whatever getData returns at fetch time, so a test can change
+ * the topic list between the initial load and a later refetch. */
+function serveTopicsDynamic(getData: () => unknown) {
+  mock.get.mockImplementation((url: string) => {
+    if (url === TOPICS_URL) {
+      return Promise.resolve({ data: getData() })
+    }
+    return Promise.reject(new Error(`Unexpected GET ${url}`))
+  })
+}
+
+function topicSelect() {
+  return screen.getByLabelText('Topic') as HTMLSelectElement
+}
+
+function addTopicButton() {
+  return screen.getByRole('button', {
+    name: 'Add topic',
+  }) as HTMLButtonElement
+}
+
+async function openAddTopicForm() {
+  await userEvent.click(
+    screen.getByRole('button', { name: '+ New topic' }),
+  )
+  return screen.getByLabelText('New topic name') as HTMLInputElement
+}
+
 function renderDialog(
   overrides: {
     onClose?: () => void
@@ -186,14 +214,206 @@ describe('GenerateQuestionsDialog', () => {
     expect(await screen.findByText('Could not load the topics.')).toBeTruthy()
   })
 
-  it('notes when the grade and subject has no topics yet', async () => {
+  it('invites adding a topic when the grade and subject has none', async () => {
     serveTopics([])
     renderDialog()
     expect(
       await screen.findByText(
-        'There are no topics for this grade and subject yet.',
+        'No topics yet for this grade and subject — add the chapter’s topic.',
       ),
     ).toBeTruthy()
+    // The add input is available directly, with no toggle to open first.
+    expect(screen.getByLabelText('New topic name')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '+ New topic' })).toBeNull()
+    expect(addTopicButton().disabled).toBe(true)
+  })
+
+  it('adds a topic from the empty state and selects it', async () => {
+    const created = { topicId: 'topic-9', name: 'Fractions' }
+    let served: unknown = []
+    serveTopicsDynamic(() => served)
+    mock.post.mockImplementation((url: string) => {
+      if (url === TOPICS_URL) {
+        served = [created]
+        return Promise.resolve({ data: created })
+      }
+      return Promise.reject(new Error(`Unexpected POST ${url}`))
+    })
+    renderDialog()
+    const nameInput = await screen.findByLabelText('New topic name')
+    await userEvent.type(nameInput, 'Fractions')
+    await userEvent.click(addTopicButton())
+    await waitFor(() =>
+      expect(mock.post).toHaveBeenCalledWith(TOPICS_URL, {
+        name: 'Fractions',
+      }),
+    )
+    await waitFor(() => expect(topicSelect().value).toBe('topic-9'))
+    expect(screen.queryByLabelText('New topic name')).toBeNull()
+  })
+
+  it('adds a topic alongside existing topics and refetches the list', async () => {
+    const created = { topicId: 'topic-3', name: 'Geometry' }
+    let served: unknown = topics
+    let topicFetches = 0
+    mock.get.mockImplementation((url: string) => {
+      if (url === TOPICS_URL) {
+        topicFetches += 1
+        return Promise.resolve({ data: served })
+      }
+      return Promise.reject(new Error(`Unexpected GET ${url}`))
+    })
+    mock.post.mockImplementation((url: string) => {
+      if (url === TOPICS_URL) {
+        served = [...topics, created]
+        return Promise.resolve({ data: created })
+      }
+      return Promise.reject(new Error(`Unexpected POST ${url}`))
+    })
+    renderDialog()
+    await screen.findByRole('option', { name: 'Fractions' })
+    expect(topicFetches).toBe(1)
+
+    const nameInput = await openAddTopicForm()
+    await userEvent.type(nameInput, 'Geometry')
+    await userEvent.click(addTopicButton())
+
+    await waitFor(() =>
+      expect(mock.post).toHaveBeenCalledWith(TOPICS_URL, {
+        name: 'Geometry',
+      }),
+    )
+    // The created topic is selected, the list was refetched so the
+    // select offers it, and the add input has collapsed.
+    await waitFor(() => expect(topicSelect().value).toBe('topic-3'))
+    expect(topicFetches).toBeGreaterThan(1)
+    expect(screen.getByRole('option', { name: 'Geometry' })).toBeTruthy()
+    expect(screen.queryByLabelText('New topic name')).toBeNull()
+  })
+
+  it('adds a topic when Enter is pressed in the name input', async () => {
+    const created = { topicId: 'topic-3', name: 'Geometry' }
+    let served: unknown = topics
+    serveTopicsDynamic(() => served)
+    mock.post.mockImplementation((url: string) => {
+      if (url === TOPICS_URL) {
+        served = [...topics, created]
+        return Promise.resolve({ data: created })
+      }
+      return Promise.reject(new Error(`Unexpected POST ${url}`))
+    })
+    renderDialog()
+    const nameInput = await openAddTopicForm()
+    await userEvent.type(nameInput, 'Geometry{enter}')
+    await waitFor(() =>
+      expect(mock.post).toHaveBeenCalledWith(TOPICS_URL, {
+        name: 'Geometry',
+      }),
+    )
+    // Enter added the topic instead of submitting the generate form.
+    expect(mock.post).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(topicSelect().value).toBe('topic-3'))
+  })
+
+  it('selects the existing topic when the name is already taken', async () => {
+    serveTopics()
+    // The backend answers 200 with the already-existing topic; the
+    // client treats it exactly like a creation.
+    mock.post.mockResolvedValue({ data: topics[0] })
+    renderDialog()
+    const nameInput = await openAddTopicForm()
+    await userEvent.type(nameInput, 'Fractions')
+    await userEvent.click(addTopicButton())
+    await waitFor(() => expect(topicSelect().value).toBe('topic-1'))
+    expect(screen.queryByLabelText('New topic name')).toBeNull()
+  })
+
+  it('keeps the typed name and shows the message when adding fails', async () => {
+    serveTopics()
+    mock.post.mockRejectedValue({
+      response: {
+        data: { message: 'A topic with this name already exists.' },
+      },
+    })
+    renderDialog()
+    const nameInput = await openAddTopicForm()
+    await userEvent.type(nameInput, 'Fractions')
+    await userEvent.click(addTopicButton())
+    expect(
+      await screen.findByText('A topic with this name already exists.'),
+    ).toBeTruthy()
+    const input = screen.getByLabelText(
+      'New topic name',
+    ) as HTMLInputElement
+    expect(input.value).toBe('Fractions')
+    expect(topicSelect().value).toBe('')
+  })
+
+  it('cannot submit a blank topic name', async () => {
+    serveTopics()
+    renderDialog()
+    const nameInput = await openAddTopicForm()
+    expect(addTopicButton().disabled).toBe(true)
+    await userEvent.type(nameInput, '   {enter}')
+    expect(addTopicButton().disabled).toBe(true)
+    expect(mock.post).not.toHaveBeenCalled()
+  })
+
+  it('blocks topic names over 200 characters with a hint', async () => {
+    serveTopics()
+    renderDialog()
+    const nameInput = await openAddTopicForm()
+    fireEvent.change(nameInput, { target: { value: 'x'.repeat(201) } })
+    expect(
+      screen.getByText('Topic names are limited to 200 characters.'),
+    ).toBeTruthy()
+    expect(addTopicButton().disabled).toBe(true)
+    fireEvent.change(nameInput, { target: { value: 'x'.repeat(200) } })
+    expect(
+      screen.queryByText('Topic names are limited to 200 characters.'),
+    ).toBeNull()
+    expect(addTopicButton().disabled).toBe(false)
+  })
+
+  it('disables the add button while the topic is being created', async () => {
+    serveTopics()
+    mock.post.mockImplementation(() => new Promise(() => {}))
+    renderDialog()
+    const nameInput = await openAddTopicForm()
+    await userEvent.type(nameInput, 'Geometry')
+    await userEvent.click(addTopicButton())
+    await waitFor(() => expect(addTopicButton().disabled).toBe(true))
+  })
+
+  it('preselects the topic when the grade and subject has only one', async () => {
+    serveTopics([topics[0]])
+    renderDialog()
+    await screen.findByRole('option', { name: 'Fractions' })
+    await waitFor(() => expect(topicSelect().value).toBe('topic-1'))
+    expect(
+      screen.getByText('Request at least one question.'),
+    ).toBeTruthy()
+  })
+
+  it('does not override a manual topic change when the list refetches', async () => {
+    let served: unknown = [topics[0]]
+    serveTopicsDynamic(() => served)
+    const { queryClient } = renderDialog()
+    await screen.findByRole('option', { name: 'Fractions' })
+    await waitFor(() => expect(topicSelect().value).toBe('topic-1'))
+
+    // The teacher clears the preselection, making their own choice.
+    await userEvent.selectOptions(topicSelect(), '')
+    expect(topicSelect().value).toBe('')
+
+    // The list refetches (now holding a different single topic); the
+    // cleared selection must not be overridden by the shortcut.
+    served = [topics[1]]
+    await queryClient.invalidateQueries({
+      queryKey: ['topics', 'gs-1'],
+    })
+    await screen.findByRole('option', { name: 'Decimals' })
+    expect(topicSelect().value).toBe('')
   })
 
   it('creates the job and transitions to the job view', async () => {

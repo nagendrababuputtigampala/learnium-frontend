@@ -23,6 +23,7 @@ import {
 import {
   QUESTION_TYPE_ORDER,
   createGenerationJob,
+  createTopic,
   dropReasonLabel,
   failureKindInfo,
   fetchGenerationJob,
@@ -36,6 +37,7 @@ import {
   scrollToDrafts,
   topicsQueryKey,
   useCreateGenerationJob,
+  useCreateTopic,
   useGenerationJob,
   useMaterialQuestions,
   useTopics,
@@ -264,6 +266,16 @@ describe('generation API functions', () => {
     await expect(fetchTopics('gs-1')).resolves.toEqual(topics)
     expect(mock.get).toHaveBeenCalledWith('/master/grade-subjects/gs-1/topics')
   })
+
+  it('creates a topic for a grade-subject', async () => {
+    const created = { topicId: 'topic-3', name: 'Geometry' }
+    mock.post.mockResolvedValue({ data: created })
+    await expect(createTopic('gs-1', 'Geometry')).resolves.toEqual(created)
+    expect(mock.post).toHaveBeenCalledWith(
+      '/master/grade-subjects/gs-1/topics',
+      { name: 'Geometry' },
+    )
+  })
 })
 
 describe('generation hooks', () => {
@@ -353,6 +365,50 @@ describe('generation hooks', () => {
     await vi.advanceTimersByTimeAsync(10000)
     expect(calls).toBe(2)
     expect(result.current.data?.status).toBe('FAILED')
+  })
+
+  it('creates a topic and refreshes the topics list', async () => {
+    const created = { topicId: 'topic-3', name: 'Geometry' }
+    let topicFetches = 0
+    mock.get.mockImplementation((url: string) => {
+      if (url === '/master/grade-subjects/gs-1/topics') {
+        topicFetches += 1
+        return Promise.resolve({
+          data: topicFetches === 1 ? topics : [...topics, created],
+        })
+      }
+      return Promise.reject(new Error(`Unexpected GET ${url}`))
+    })
+    mock.post.mockResolvedValue({ data: created })
+    const { wrapper } = createWrapper()
+    const { result } = renderHook(
+      () => ({
+        topicsQuery: useTopics('gs-1'),
+        createTopic: useCreateTopic(),
+      }),
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.topicsQuery.isSuccess).toBe(true))
+    expect(result.current.topicsQuery.data).toEqual(topics)
+
+    let returned: unknown
+    await act(async () => {
+      returned = await result.current.createTopic.mutateAsync({
+        gradeSubjectId: 'gs-1',
+        name: 'Geometry',
+      })
+    })
+    expect(returned).toEqual(created)
+    expect(mock.post).toHaveBeenCalledWith(
+      '/master/grade-subjects/gs-1/topics',
+      { name: 'Geometry' },
+    )
+    // The mutation invalidates the topics query, which refetches and
+    // now includes the created topic.
+    await waitFor(() => expect(topicFetches).toBe(2))
+    await waitFor(() =>
+      expect(result.current.topicsQuery.data).toEqual([...topics, created]),
+    )
   })
 
   it('creates a job through the mutation hook', async () => {
