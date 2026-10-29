@@ -34,7 +34,28 @@ Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).
   spec [{topicId, name}]; flagged for the branch report. 17 lib tests
   incl. fake-timer polling transitions (PENDING→RUNNING→SUCCEEDED and
   stop-at-FAILED) verified stable across repeated runs.
-- Next: H2/H3 (generate dialog + job view), then H4 (draft preview).
+- Done H2/H3 (generate dialog + job view): components/generation/
+  QuestionTypeChip; GenerateQuestionsDialog (mirrors the AddMaterial
+  dialog shell) — topic select from the material's grade-subject,
+  difficulty select (Medium default), five per-type count inputs
+  clamped 0–40 with a live total; validation in priority order (topic
+  → at least one → total ≤ 40) disables Generate with the reason
+  shown; topics loading/error/empty states handled; create errors
+  surface the backend envelope message (LRN-GEN-*); on 202 the dialog
+  transitions to GenerationJobView (footer action renamed "Done" so
+  it never duplicates the header's Close label). GenerationJobView —
+  queued/running (with "Attempt N of 2")/retrying/succeeded/failed
+  phases from generationJobPhase; retrying distinguishes "will retry
+  automatically" (back to PENDING) from "Retrying now" (RUNNING
+  again); per-type results table (rows for types with requested > 0
+  or received > 0) with drop counts and plain-word reasons; token
+  usage line rendering only the recorded parts; on SUCCEEDED it
+  invalidates ['materials', centreId, 'questions', materialId] and
+  offers "View drafts". Small H1 amendment folded in: failureKindInfo
+  now accepts null and returns a generic failure, so the view needs
+  no unreachable null guards. 27 component tests (11 dialog + 16 job
+  view) incl. polling-driven transitions and the invalidation key.
+- Next: H4 (draft preview cards + detail-page integration).
 - Failing tests: none.
 
 ---

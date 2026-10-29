@@ -158,6 +158,11 @@ describe('failureKindInfo', () => {
       expect(failureKindInfo(kind).explanation.length).toBeGreaterThan(0)
     }
   })
+
+  it('falls back to a generic failure for a missing kind', () => {
+    expect(failureKindInfo(null).headline).toBe('Generation failed')
+    expect(failureKindInfo(null).retryable).toBe(false)
+  })
 })
 
 describe('generationJobPhase', () => {

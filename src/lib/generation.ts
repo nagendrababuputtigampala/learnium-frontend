@@ -134,8 +134,17 @@ const FAILURE_KIND_INFO: Record<GenerationFailureKind, FailureKindInfo> = {
   },
 }
 
-export function failureKindInfo(kind: GenerationFailureKind): FailureKindInfo {
-  return FAILURE_KIND_INFO[kind]
+/** Fallback for a failed job whose kind is missing (should not happen). */
+const UNKNOWN_FAILURE_INFO: FailureKindInfo = {
+  headline: 'Generation failed',
+  explanation: 'Something went wrong while generating. Please try again.',
+  retryable: false,
+}
+
+export function failureKindInfo(
+  kind: GenerationFailureKind | null,
+): FailureKindInfo {
+  return kind === null ? UNKNOWN_FAILURE_INFO : FAILURE_KIND_INFO[kind]
 }
 
 export type GenerationJobPhase =
