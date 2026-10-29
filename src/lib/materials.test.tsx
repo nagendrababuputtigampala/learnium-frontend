@@ -107,6 +107,14 @@ describe('extractionStatusInfo', () => {
       expect(extractionStatusInfo(status).chipClassName.length).toBeGreaterThan(0)
     }
   })
+
+  it('returns an honest fallback for a legacy material with no status', () => {
+    const info = extractionStatusInfo(null)
+    expect(info.chipLabel).toBe('Not extracted')
+    expect(info.chipClassName.length).toBeGreaterThan(0)
+    expect(info.explanation).toMatch(/before text extraction was available/)
+    expect(info.explanation).toMatch(/no extracted text/)
+  })
 })
 
 describe('query keys', () => {

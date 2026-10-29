@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AuthUser, MaterialDetailDto } from '../lib/api'
 import { AuthProvider } from '../lib/auth'
 import {
+  materialDetailLegacy,
   materialDetailNoText,
   materialDetailOk,
   teacherUser,
@@ -188,6 +189,21 @@ describe('MaterialDetailPage', () => {
       expect(screen.getByText(/No extracted text ·/)).toBeInTheDocument()
       view.unmount()
     }
+  })
+
+  it('renders a legacy material with no extraction status or text', async () => {
+    renderDetail(materialDetailLegacy)
+    expect(
+      await screen.findByRole('heading', { name: 'Legacy chapter' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Not extracted')).toBeInTheDocument()
+    expect(
+      screen.getByText(/before text extraction was available/),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('No extracted text is available for this material.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/No extracted text ·/)).toBeInTheDocument()
   })
 
   it('shows the deduplicated notice when arriving from a duplicate add', async () => {

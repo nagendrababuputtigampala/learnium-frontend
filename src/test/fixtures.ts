@@ -223,6 +223,16 @@ export const materialFailed: MaterialDto = {
   contentHash: null,
 }
 
+/** Legacy material added before extraction existed: no status, no text. */
+export const materialLegacy: MaterialDto = {
+  ...materialOk,
+  materialId: 'mat-7',
+  title: 'Legacy chapter',
+  extractionStatus: null,
+  extractedChars: null,
+  contentHash: null,
+}
+
 export const materialDetailOk: MaterialDetailDto = {
   ...materialOk,
   extractedText: 'A fraction is a part of a whole.',
@@ -230,6 +240,11 @@ export const materialDetailOk: MaterialDetailDto = {
 
 export const materialDetailNoText: MaterialDetailDto = {
   ...materialNoText,
+  extractedText: null,
+}
+
+export const materialDetailLegacy: MaterialDetailDto = {
+  ...materialLegacy,
   extractedText: null,
 }
 

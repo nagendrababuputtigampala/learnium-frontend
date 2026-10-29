@@ -69,6 +69,19 @@ Branched off dev b1362b68 (M2 + both fix rounds merged via PR #8).
   material PDFs in deployment well below the app's 20 MB limit.
   Added `client_max_body_size 21m;` at server level (20 MB product
   limit + multipart overhead). Config-only.
+- Fix (Codex review F-4, 2026-10-28): legacy (pre-V10) materials
+  have a null extractionStatus, but the frontend type was
+  non-nullable and extractionStatusInfo did a bare record lookup —
+  null came back undefined and the status chip threw (detail page
+  had the same assumption). MaterialDto/MaterialDetailDto now type
+  the status as ExtractionStatus | null; extractionStatusInfo
+  accepts null and returns a "Not extracted" fallback (neutral chip
+  + explanation that the material predates extraction and the
+  chapter should be added again so its text can be read); the chip
+  prop is nullable too. New fixtures (materialLegacy,
+  materialDetailLegacy) and tests: null status info, chip render
+  for null, list row and detail page for a legacy material — chip
+  and info tests verified red against the old lookup.
 
 ---
 

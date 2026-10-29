@@ -54,9 +54,24 @@ const STATUS_INFO: Record<ExtractionStatus, MaterialStatusInfo> = {
   },
 }
 
+/**
+ * Fallback for legacy materials whose extraction status is null (they
+ * were added before text extraction existed, so nothing was ever read
+ * from them).
+ */
+const NOT_EXTRACTED_INFO: MaterialStatusInfo = {
+  chipLabel: 'Not extracted',
+  chipClassName: 'bg-paper text-ink/60',
+  explanation:
+    'This material was added before text extraction was available, so there is no extracted text for it. Add the chapter again — re-upload the PDF or paste the text — so its text can be read and questions can be generated from it.',
+}
+
 export function extractionStatusInfo(
-  status: ExtractionStatus,
+  status: ExtractionStatus | null,
 ): MaterialStatusInfo {
+  if (status === null) {
+    return NOT_EXTRACTED_INFO
+  }
   return STATUS_INFO[status]
 }
 

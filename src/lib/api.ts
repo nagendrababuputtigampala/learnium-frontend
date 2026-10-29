@@ -126,7 +126,9 @@ export interface MaterialDto {
   gradeName: string
   subjectName: string
   sourceType: MaterialSourceType
-  extractionStatus: ExtractionStatus
+  // Null for materials added before extraction existed (pre-V10 rows
+  // have no status); the UI renders a "Not extracted" fallback.
+  extractionStatus: ExtractionStatus | null
   extractedChars: number | null
   contentHash: string | null
   deduplicated: boolean

@@ -6,6 +6,7 @@ import {
   adminUser,
   gradeSubjects,
   materialFailed,
+  materialLegacy,
   materialNoText,
   materialOk,
   materialOverLimit,
@@ -100,6 +101,16 @@ describe('MaterialsPage', () => {
     expect(screen.getAllByText(/No extracted text/)).toHaveLength(2)
     expect(screen.getAllByText(/Added 2026-10-20/)).toHaveLength(5)
     expect(screen.getByText(/Added 2026-10-21/)).toBeInTheDocument()
+  })
+
+  it('renders a legacy material with no extraction status', async () => {
+    seedSession(teacherUser, () => pageOf([materialLegacy], 0, 1))
+    renderWithProviders(<MaterialsPage />, ['/materials'])
+    expect(
+      await screen.findByRole('link', { name: 'Legacy chapter' }),
+    ).toHaveAttribute('href', '/materials/mat-7')
+    expect(screen.getByText('Not extracted')).toBeInTheDocument()
+    expect(screen.getByText(/No extracted text/)).toBeInTheDocument()
   })
 
   it('shows the same list to a centre admin', async () => {

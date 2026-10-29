@@ -4,7 +4,7 @@ import { extractionStatusInfo } from '../../lib/materials'
 export default function ExtractionStatusChip({
   status,
 }: {
-  status: ExtractionStatus
+  status: ExtractionStatus | null
 }) {
   const info = extractionStatusInfo(status)
   return (
