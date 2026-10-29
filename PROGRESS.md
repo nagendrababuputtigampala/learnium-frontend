@@ -55,7 +55,30 @@ Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).
   now accepts null and returns a generic failure, so the view needs
   no unreachable null guards. 27 component tests (11 dialog + 16 job
   view) incl. polling-driven transitions and the invalidation key.
-- Next: H4 (draft preview cards + detail-page integration).
+- Done H4 (draft preview + detail-page integration): components/
+  generation/DraftQuestionCard — defensive per-type renderers over
+  the persisted payload contract (every field type-checked; any
+  mismatch, a non-object payload, or an unknown type code renders a
+  generic fallback card with a neutral "Question" chip — the
+  branch-1 legacy-null lesson); MCQ marks the option whose id equals
+  correctRef; NUMERIC shows value ± tolerance + unit + worked
+  solution; WRITTEN shows the model answer and rubric criteria with
+  max scores (mark/marks wording); every card carries a provenance
+  footer (provider · model · prompt version · date). Generated
+  DraftsSection (id="generated-drafts") — paged read-only preview on
+  the material detail page with the branch-1 pagination pattern and
+  an honest empty state; NO edit/approve actions (M4). Detail page:
+  "Generate questions" button enabled only when extractionStatus is
+  OK, otherwise disabled with the one-line reason; lib gained
+  isQuestionTypeCode + scrollToDrafts helpers (the job view's success
+  invalidation refreshes the section; "View drafts" closes the
+  dialog and scrolls to it). Existing detail/routes tests updated to
+  serve the new questions endpoint. 40 new tests across card,
+  section and page files incl. ~25 malformed-payload cases and the
+  end-to-end generate → succeed → view-drafts flow.
+- Branch complete: 317 tests (was 244 at branch 1), 100% statements/
+  branches/functions/lines, build green — full gate run twice from a
+  clean state. NOT pushed.
 - Failing tests: none.
 
 ---

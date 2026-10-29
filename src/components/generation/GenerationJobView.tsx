@@ -126,18 +126,16 @@ export default function GenerationJobView({
     }
   }, [job?.status, job?.materialId, user?.centreId, queryClient])
 
-  if (jobQuery.isPending) {
-    return <p className="text-sm text-ink/60">Checking generation status…</p>
-  }
-
-  if (jobQuery.isError) {
-    return (
+  if (job === undefined) {
+    return jobQuery.isError ? (
       <p role="alert" className="text-sm text-rose-weak">
         {getApiErrorMessage(
           jobQuery.error,
           'Could not load the generation status.',
         )}
       </p>
+    ) : (
+      <p className="text-sm text-ink/60">Checking generation status…</p>
     )
   }
 

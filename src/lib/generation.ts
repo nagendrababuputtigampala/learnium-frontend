@@ -74,6 +74,22 @@ export function questionTypeInfo(type: QuestionTypeCode): QuestionTypeInfo {
   return QUESTION_TYPE_INFO[type]
 }
 
+/**
+ * Runtime guard for type codes arriving from the wire — a payload
+ * whose type is not one of the five known codes must degrade to a
+ * fallback card, never crash a renderer.
+ */
+export function isQuestionTypeCode(value: string): value is QuestionTypeCode {
+  return (QUESTION_TYPE_ORDER as readonly string[]).includes(value)
+}
+
+/** Scrolls the generated-drafts section into view (no-op if absent). */
+export function scrollToDrafts(): void {
+  document
+    .getElementById('generated-drafts')
+    ?.scrollIntoView({ behavior: 'smooth' })
+}
+
 const DROP_REASON_LABELS: Record<string, string> = {
   SCHEMA_INVALID: "didn't match the required format",
   DUPLICATE_STEM: 'duplicate question',

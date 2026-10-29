@@ -21,6 +21,7 @@ import {
   topics,
 } from '../test/fixtures'
 import {
+  QUESTION_TYPE_ORDER,
   createGenerationJob,
   dropReasonLabel,
   failureKindInfo,
@@ -29,8 +30,10 @@ import {
   fetchTopics,
   generationJobPhase,
   generationJobQueryKey,
+  isQuestionTypeCode,
   materialQuestionsQueryKey,
   questionTypeInfo,
+  scrollToDrafts,
   topicsQueryKey,
   useCreateGenerationJob,
   useGenerationJob,
@@ -110,6 +113,36 @@ describe('questionTypeInfo', () => {
       'WRITTEN',
     ] as const) {
       expect(questionTypeInfo(type).chipClassName.length).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('isQuestionTypeCode', () => {
+  it('accepts the five known codes and rejects anything else', () => {
+    for (const type of QUESTION_TYPE_ORDER) {
+      expect(isQuestionTypeCode(type)).toBe(true)
+    }
+    expect(isQuestionTypeCode('ESSAY')).toBe(false)
+    expect(isQuestionTypeCode('')).toBe(false)
+  })
+})
+
+describe('scrollToDrafts', () => {
+  it('does nothing when the drafts section is absent', () => {
+    expect(() => scrollToDrafts()).not.toThrow()
+  })
+
+  it('scrolls the drafts section into view when present', () => {
+    const element = document.createElement('section')
+    element.id = 'generated-drafts'
+    const scrollSpy = vi.fn()
+    element.scrollIntoView = scrollSpy
+    document.body.appendChild(element)
+    try {
+      scrollToDrafts()
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth' })
+    } finally {
+      element.remove()
     }
   })
 })
