@@ -1,9 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
+import signInBackground from '../assets/signin-background.svg'
 import {
   apiClient,
   getApiErrorMessage,
@@ -112,8 +114,18 @@ export default function JoinPage() {
   const batches = batchesQuery.data ?? []
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4 font-body text-ink">
+    <div
+      className="flex min-h-screen items-center justify-center bg-paper bg-cover bg-center px-4 font-body text-ink"
+      style={{ backgroundImage: `url("${signInBackground}")` }}
+    >
       <div className="w-full max-w-sm rounded-2xl border border-card-border bg-white p-8 shadow-sm">
+        <Link
+          to="/login"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-primary hover:underline"
+        >
+          <ArrowLeft size={16} />
+          Back to sign in
+        </Link>
         <div className="mb-6 flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-primary font-display text-xl font-bold text-white">
             L

@@ -7,6 +7,7 @@ import axios, {
 } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  advanceSessionGeneration,
   API_BASE_URL,
   apiClient,
   clearStudentSession,
@@ -15,12 +16,15 @@ import {
   getAccessToken,
   getApiErrorMessage,
   getRefreshToken,
+  getSessionGeneration,
   getStudent,
+  isStaleSessionError,
   refreshAccessToken,
   saveStudentSession,
   setAccessToken,
   setRefreshToken,
   setSessionExpiredHandler,
+  StaleSessionError,
 } from './api'
 import {
   loginResponseFor,
@@ -222,6 +226,151 @@ describe('refreshAccessToken', () => {
     await expect(refreshAccessToken()).resolves.toBe('access-token')
     expect(post).toHaveBeenCalledTimes(2)
   })
+
+  it('advances the session generation on advance and on clearTokens', () => {
+    const before = getSessionGeneration()
+    advanceSessionGeneration()
+    expect(getSessionGeneration()).toBe(before + 1)
+    clearTokens()
+    expect(getSessionGeneration()).toBe(before + 2)
+  })
+
+  it('identifies stale-session errors', () => {
+    expect(isStaleSessionError(new StaleSessionError())).toBe(true)
+    expect(isStaleSessionError(new Error('boom'))).toBe(false)
+    expect(isStaleSessionError('nope')).toBe(false)
+  })
+
+  it('discards a refresh that resolves after the session was cleared', async () => {
+    setRefreshToken('old-refresh')
+    let resolvePost: (value: AxiosResponse) => void = () => undefined
+    vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((resolve) => {
+          resolvePost = resolve
+        }),
+    )
+    const pending = refreshAccessToken()
+    // Logout lands while the refresh is in flight: storage is emptied.
+    clearTokens()
+    resolvePost({ data: loginResponseFor(teacherUser) } as AxiosResponse)
+    await expect(pending).rejects.toBeInstanceOf(StaleSessionError)
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('never overwrites the tokens of a newer login', async () => {
+    setRefreshToken('old-refresh')
+    let resolvePost: (value: AxiosResponse) => void = () => undefined
+    vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((resolve) => {
+          resolvePost = resolve
+        }),
+    )
+    const pending = refreshAccessToken()
+    // A new login completes while the old refresh is still in flight.
+    advanceSessionGeneration()
+    setAccessToken('new-access')
+    setRefreshToken('new-refresh')
+    resolvePost({ data: loginResponseFor(teacherUser) } as AxiosResponse)
+    await expect(pending).rejects.toBeInstanceOf(StaleSessionError)
+    expect(getAccessToken()).toBe('new-access')
+    expect(getRefreshToken()).toBe('new-refresh')
+  })
+
+  it('a superseded refresh does not clear the slot of a newer refresh', async () => {
+    setRefreshToken('old-refresh')
+    const resolvers: Array<(value: AxiosResponse) => void> = []
+    const post = vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((resolve) => {
+          resolvers.push(resolve)
+        }),
+    )
+    const stale = refreshAccessToken()
+    advanceSessionGeneration()
+    setRefreshToken('new-refresh')
+    const current = refreshAccessToken()
+    expect(post).toHaveBeenCalledTimes(2)
+    resolvers[0]({ data: loginResponseFor(teacherUser) } as AxiosResponse)
+    await expect(stale).rejects.toBeInstanceOf(StaleSessionError)
+    // The newer refresh is still the shared in-flight one.
+    expect(refreshAccessToken()).toBe(current)
+    expect(post).toHaveBeenCalledTimes(2)
+    resolvers[1]({ data: loginResponseFor(teacherUser) } as AxiosResponse)
+    await expect(current).resolves.toBe('access-token')
+    expect(getAccessToken()).toBe('access-token')
+    expect(getRefreshToken()).toBe('refresh-token')
+  })
+
+  it('discards a refresh failure that lands after the session was cleared', async () => {
+    setRefreshToken('old-refresh')
+    let rejectPost: (error: unknown) => void = () => undefined
+    vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((_resolve, reject) => {
+          rejectPost = reject
+        }),
+    )
+    const pending = refreshAccessToken()
+    // Logout lands while the refresh is in flight: storage is emptied.
+    clearTokens()
+    rejectPost(new Error('network down'))
+    await expect(pending).rejects.toBeInstanceOf(StaleSessionError)
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('a failed stale refresh never clears the tokens of a newer login', async () => {
+    setRefreshToken('old-refresh')
+    let rejectPost: (error: unknown) => void = () => undefined
+    vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((_resolve, reject) => {
+          rejectPost = reject
+        }),
+    )
+    const pending = refreshAccessToken()
+    // A new login completes while the old refresh is still in flight.
+    advanceSessionGeneration()
+    setAccessToken('new-access')
+    setRefreshToken('new-refresh')
+    rejectPost(new Error('refresh rejected'))
+    await expect(pending).rejects.toBeInstanceOf(StaleSessionError)
+    expect(getAccessToken()).toBe('new-access')
+    expect(getRefreshToken()).toBe('new-refresh')
+  })
+
+  it('a superseded refresh rejection does not clear the slot of a newer refresh', async () => {
+    setRefreshToken('old-refresh')
+    const controls: Array<{
+      resolve: (value: AxiosResponse) => void
+      reject: (error: unknown) => void
+    }> = []
+    const post = vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((resolve, reject) => {
+          controls.push({ resolve, reject })
+        }),
+    )
+    const stale = refreshAccessToken()
+    advanceSessionGeneration()
+    setRefreshToken('new-refresh')
+    const current = refreshAccessToken()
+    expect(post).toHaveBeenCalledTimes(2)
+    controls[0].reject(new Error('refresh rejected'))
+    await expect(stale).rejects.toBeInstanceOf(StaleSessionError)
+    // The newer refresh is still the shared in-flight one.
+    expect(refreshAccessToken()).toBe(current)
+    expect(post).toHaveBeenCalledTimes(2)
+    controls[1].resolve({
+      data: loginResponseFor(teacherUser),
+    } as AxiosResponse)
+    await expect(current).resolves.toBe('access-token')
+    expect(getAccessToken()).toBe('access-token')
+    expect(getRefreshToken()).toBe('refresh-token')
+  })
 })
 
 const okResponse = (config: InternalAxiosRequestConfig): AxiosResponse => ({
@@ -346,6 +495,64 @@ describe('auth interceptors', () => {
     expect(handler).toHaveBeenCalledTimes(1)
     expect(getAccessToken()).toBeNull()
     expect(getRefreshToken()).toBeNull()
+  })
+
+  it('leaves a newer session untouched when the refresh goes stale', async () => {
+    setAccessToken('stale-access')
+    setRefreshToken('old-refresh')
+    const handler = vi.fn()
+    setSessionExpiredHandler(handler)
+    let resolvePost: (value: AxiosResponse) => void = () => undefined
+    const post = vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((resolve) => {
+          resolvePost = resolve
+        }),
+    )
+    const client = clientWith((config) =>
+      Promise.reject(unauthorizedError(config)),
+    )
+    const pending = client.get('/me')
+    await vi.waitFor(() => expect(post).toHaveBeenCalledTimes(1))
+    // Logout and a fresh login land while the refresh is in flight.
+    clearTokens()
+    setAccessToken('new-access')
+    setRefreshToken('new-refresh')
+    resolvePost({ data: loginResponseFor(teacherUser) } as AxiosResponse)
+    await expect(pending).rejects.toThrow('Unauthorized')
+    expect(handler).not.toHaveBeenCalled()
+    expect(getAccessToken()).toBe('new-access')
+    expect(getRefreshToken()).toBe('new-refresh')
+  })
+
+  it('leaves a newer session untouched when the refresh fails stale', async () => {
+    setAccessToken('stale-access')
+    setRefreshToken('old-refresh')
+    const handler = vi.fn()
+    setSessionExpiredHandler(handler)
+    let rejectPost: (error: unknown) => void = () => undefined
+    const post = vi.spyOn(axios, 'post').mockImplementation(
+      () =>
+        new Promise<AxiosResponse>((_resolve, reject) => {
+          rejectPost = reject
+        }),
+    )
+    const client = clientWith((config) =>
+      Promise.reject(unauthorizedError(config)),
+    )
+    const pending = client.get('/me')
+    await vi.waitFor(() => expect(post).toHaveBeenCalledTimes(1))
+    // Logout and a fresh login land while the refresh is in flight,
+    // then the old refresh fails: the failure belongs to the old
+    // session and must not clear or expire the new one.
+    clearTokens()
+    setAccessToken('new-access')
+    setRefreshToken('new-refresh')
+    rejectPost(new Error('refresh failed'))
+    await expect(pending).rejects.toThrow('Unauthorized')
+    expect(handler).not.toHaveBeenCalled()
+    expect(getAccessToken()).toBe('new-access')
+    expect(getRefreshToken()).toBe('new-refresh')
   })
 
   it('still rejects cleanly when no session-expired handler is registered', async () => {

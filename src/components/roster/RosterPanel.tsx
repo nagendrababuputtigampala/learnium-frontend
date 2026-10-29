@@ -156,6 +156,19 @@ export default function RosterPanel({ batchId }: RosterPanelProps) {
     setCopiedPin(pin)
   }
 
+  /** Dismissing the notice drops the PIN-bearing mutations entirely:
+   * resetting an observer alone leaves its result in the mutation
+   * cache, so the cache is cleared as well — a one-time PIN must not
+   * linger anywhere once it has been dismissed. */
+  const dismissPinNotice = () => {
+    setPinNotice(null)
+    setCopiedPin(null)
+    addMutation.reset()
+    bulkMutation.reset()
+    resetPinMutation.reset()
+    queryClient.getMutationCache().clear()
+  }
+
   const students = rosterQuery.data ?? []
 
   return (
@@ -204,7 +217,7 @@ export default function RosterPanel({ batchId }: RosterPanelProps) {
           </ul>
           <button
             type="button"
-            onClick={() => setPinNotice(null)}
+            onClick={dismissPinNotice}
             className="mt-3 rounded-full border border-card-border bg-white px-4 py-1.5 text-xs font-semibold hover:bg-paper"
           >
             Dismiss

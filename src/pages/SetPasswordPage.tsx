@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
+import PasswordInput from '../components/PasswordInput'
 import { apiClient, getApiErrorMessage } from '../lib/api'
 
 const setPasswordSchema = z
@@ -20,9 +21,6 @@ const setPasswordSchema = z
   })
 
 type SetPasswordFormValues = z.infer<typeof setPasswordSchema>
-
-const inputClassName =
-  'w-full rounded-lg border border-card-border px-3 py-2 text-sm outline-none focus:border-indigo-bright focus:ring-2 focus:ring-indigo-bright/30'
 
 export default function SetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -119,11 +117,9 @@ export default function SetPasswordPage() {
               >
                 New password
               </label>
-              <input
+              <PasswordInput
                 id="newPassword"
-                type="password"
                 autoComplete="new-password"
-                className={inputClassName}
                 {...register('newPassword')}
               />
               {errors.newPassword && (
@@ -139,11 +135,9 @@ export default function SetPasswordPage() {
               >
                 Confirm password
               </label>
-              <input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 autoComplete="new-password"
-                className={inputClassName}
                 {...register('confirmPassword')}
               />
               {errors.confirmPassword && (

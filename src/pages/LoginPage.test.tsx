@@ -42,6 +42,25 @@ beforeEach(() => {
 })
 
 describe('LoginPage', () => {
+  it('renders the standard sign-in background behind the card', () => {
+    const { container } = renderLogin()
+    const shell = container.querySelector('[style*="background-image"]')
+    expect(shell).not.toBeNull()
+    expect(shell?.className).toContain('min-h-screen')
+    expect(shell?.getAttribute('style')).toMatch(/background-image: url\(/)
+  })
+
+  it('toggles the password between masked and visible', async () => {
+    const user = userEvent.setup()
+    renderLogin()
+    const input = screen.getByLabelText('Password')
+    expect(input).toHaveAttribute('type', 'password')
+    await user.click(screen.getByRole('button', { name: 'Show password' }))
+    expect(input).toHaveAttribute('type', 'text')
+    await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(input).toHaveAttribute('type', 'password')
+  })
+
   it('renders the sign-in heading, form fields and helper links', () => {
     renderLogin()
     expect(

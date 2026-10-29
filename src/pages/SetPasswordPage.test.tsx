@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '../test/renderWithProviders'
@@ -38,6 +38,32 @@ async function fillValidPasswords(password = 'abcd1234') {
 }
 
 describe('SetPasswordPage', () => {
+  it('toggles visibility on both password fields independently', async () => {
+    const user = userEvent.setup()
+    renderAt('/set-password?token=<redacted>&purpose=invite')
+    const newPassword = screen.getByLabelText('New password')
+    const confirmPassword = screen.getByLabelText('Confirm password')
+    expect(newPassword).toHaveAttribute('type', 'password')
+    expect(confirmPassword).toHaveAttribute('type', 'password')
+
+    const newPasswordWrap = within(newPassword.parentElement as HTMLElement)
+    await user.click(
+      newPasswordWrap.getByRole('button', { name: 'Show password' }),
+    )
+    expect(newPassword).toHaveAttribute('type', 'text')
+    expect(confirmPassword).toHaveAttribute('type', 'password')
+
+    const confirmWrap = within(confirmPassword.parentElement as HTMLElement)
+    await user.click(
+      confirmWrap.getByRole('button', { name: 'Show password' }),
+    )
+    expect(confirmPassword).toHaveAttribute('type', 'text')
+    await user.click(
+      confirmWrap.getByRole('button', { name: 'Hide password' }),
+    )
+    expect(confirmPassword).toHaveAttribute('type', 'password')
+  })
+
   it('shows an invalid-link message when the token is missing', () => {
     renderAt('/set-password')
     expect(

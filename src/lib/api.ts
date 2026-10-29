@@ -63,6 +63,8 @@ export interface TeacherDto {
   email: string
   displayName: string
   active: boolean
+  /** True while the teacher has been invited but not yet set a password. */
+  invited: boolean
   createdAt: string
 }
 
@@ -159,6 +161,7 @@ export function setRefreshToken(token: string | null): void {
 export function clearTokens(): void {
   accessToken = null
   setRefreshToken(null)
+  advanceSessionGeneration()
 }
 
 /** Persists a student join session (token + profile) in sessionStorage. */
@@ -188,6 +191,44 @@ export function setSessionExpiredHandler(handler: (() => void) | null): void {
 }
 
 /* ------------------------------------------------------------------ */
+/* Session generation (stale-refresh guard)                            */
+/* ------------------------------------------------------------------ */
+
+let sessionGeneration = 0
+
+/**
+ * Raised when a token refresh resolves after the session it belonged
+ * to has ended (logout, session clear or a newer login). The refreshed
+ * tokens are discarded so they can never resurrect the old session or
+ * overwrite the current one.
+ */
+export class StaleSessionError extends Error {
+  constructor() {
+    super('Session changed while a token refresh was in flight')
+    this.name = 'StaleSessionError'
+  }
+}
+
+export function isStaleSessionError(error: unknown): boolean {
+  return error instanceof StaleSessionError
+}
+
+/** The current session generation; it advances on every session change. */
+export function getSessionGeneration(): number {
+  return sessionGeneration
+}
+
+/**
+ * Advances the session generation. A refresh still in flight from the
+ * previous generation is discarded when it resolves, and the next
+ * refresh call starts a fresh request instead of joining the old one.
+ */
+export function advanceSessionGeneration(): void {
+  sessionGeneration += 1
+  refreshPromise = null
+}
+
+/* ------------------------------------------------------------------ */
 /* Refresh (single-flight)                                             */
 /* ------------------------------------------------------------------ */
 
@@ -195,8 +236,12 @@ let refreshPromise: Promise<string> | null = null
 
 /**
  * Exchanges the stored refresh token for a fresh token pair.
- * Concurrent callers share one in-flight request; the rotated refresh
- * token replaces the stored one.
+ * Concurrent callers within one session generation share one in-flight
+ * request; the rotated refresh token replaces the stored one. If the
+ * session generation advances while the request is in flight, the
+ * outcome is discarded with a StaleSessionError instead of being
+ * applied — on success AND on failure alike, so a stale rejection can
+ * never clear a newer session's tokens or report its expiry.
  */
 export function refreshAccessToken(): Promise<string> {
   if (refreshPromise !== null) {
@@ -206,17 +251,34 @@ export function refreshAccessToken(): Promise<string> {
   if (refreshToken === null) {
     return Promise.reject(new Error('No refresh token available'))
   }
-  refreshPromise = axios
+  const generation = sessionGeneration
+  const promise = axios
     .post<LoginResponse>(`${API_BASE_URL}/auth/refresh`, { refreshToken })
-    .then((response) => {
-      setAccessToken(response.data.accessToken)
-      setRefreshToken(response.data.refreshToken)
-      return response.data.accessToken
-    })
+    .then(
+      (response) => {
+        if (generation !== sessionGeneration) {
+          throw new StaleSessionError()
+        }
+        setAccessToken(response.data.accessToken)
+        setRefreshToken(response.data.refreshToken)
+        return response.data.accessToken
+      },
+      (error: unknown) => {
+        if (generation !== sessionGeneration) {
+          // The session this refresh belonged to has been replaced;
+          // its failure is not the current session's expiry.
+          throw new StaleSessionError()
+        }
+        throw error
+      },
+    )
     .finally(() => {
-      refreshPromise = null
+      if (refreshPromise === promise) {
+        refreshPromise = null
+      }
     })
-  return refreshPromise
+  refreshPromise = promise
+  return promise
 }
 
 /* ------------------------------------------------------------------ */
@@ -286,7 +348,12 @@ export function createApiClient(baseURL: string): AxiosInstance {
         config.headers = AxiosHeaders.from(config.headers)
         config.headers.set('Authorization', `Bearer ${token}`)
         return client(config)
-      } catch {
+      } catch (refreshError) {
+        if (isStaleSessionError(refreshError)) {
+          // The refresh belonged to a session that has already been
+          // replaced; the current session's tokens are not ours to clear.
+          return Promise.reject(error)
+        }
         clearTokens()
         sessionExpiredHandler?.()
         return Promise.reject(error)

@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth'
 export default function HomePage() {
   const { user } = useAuth()
   const batchesQuery = useQuery({
-    queryKey: ['batches'],
+    queryKey: ['batches', user?.centreId],
     queryFn: async () => {
       const response = await apiClient.get<BatchDto[]>('/batches')
       return response.data

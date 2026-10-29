@@ -86,7 +86,11 @@ describe('BatchesPage as admin', () => {
     seedSession(adminUser)
     renderWithProviders(<BatchesPage />, ['/batches'])
     expect(await screen.findByText('Grade 8 Math — Batch B')).toBeInTheDocument()
-    expect(screen.getByText('Grade 8 · Mathematics')).toBeInTheDocument()
+    expect(
+      within(cardFor('Grade 8 Math — Batch B')).getByText(
+        'Grade 8 · Mathematics',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByText(/5 students/)).toBeInTheDocument()
     expect(screen.getByText(/Teacher: Mrs\. Patel/)).toBeInTheDocument()
     expect(screen.getByText('Grade 7 Science — Batch A')).toBeInTheDocument()

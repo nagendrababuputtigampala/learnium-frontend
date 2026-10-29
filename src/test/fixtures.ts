@@ -70,6 +70,7 @@ export const teacherOne: TeacherDto = {
   email: 'patel@learnium.test',
   displayName: 'Mrs. Patel',
   active: true,
+  invited: false,
   createdAt: '2026-10-01T09:00:00Z',
 }
 
@@ -78,7 +79,17 @@ export const teacherTwo: TeacherDto = {
   email: 'lee@learnium.test',
   displayName: 'Mr. Lee',
   active: false,
+  invited: false,
   createdAt: '2026-10-02T09:00:00Z',
+}
+
+export const teacherInvited: TeacherDto = {
+  userId: 'user-teacher-3',
+  email: 'new@learnium.test',
+  displayName: 'New Teacher',
+  active: true,
+  invited: true,
+  createdAt: '2026-10-03T09:00:00Z',
 }
 
 export const batchOne: BatchDto = {
