@@ -176,10 +176,10 @@ describe('failureKindInfo', () => {
       'MODEL_ERROR',
       'MALFORMED_RESPONSE',
       'TRUNCATED',
+      'ZERO_VALID',
     ]
     const terminal: GenerationFailureKind[] = [
       'SAFETY_REFUSAL',
-      'ZERO_VALID',
       'MATERIAL_DELETED',
     ]
     for (const kind of retryable) {

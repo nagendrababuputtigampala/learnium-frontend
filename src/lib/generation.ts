@@ -146,8 +146,8 @@ const FAILURE_KIND_INFO: Record<GenerationFailureKind, FailureKindInfo> = {
   ZERO_VALID: {
     headline: 'No usable questions came back',
     explanation:
-      'The AI replied, but none of its questions passed the quality checks. Try again, or ask for a different mix of question types.',
-    retryable: false,
+      'The AI replied, but none of its questions passed the quality checks.',
+    retryable: true,
   },
   MATERIAL_DELETED: {
     headline: 'The source material is no longer available',
