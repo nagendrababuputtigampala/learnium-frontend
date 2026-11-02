@@ -242,4 +242,13 @@ describe('M4 review and bank', () => {
     expect(mock.get).toHaveBeenCalledWith('/questions', expect.objectContaining({ params: expect.objectContaining({ status: 'APPROVED' }) }))
   })
 
+  it('keeps malformed rubric entries inspectable and rejectable', async () => {
+    stored = question('WRITTEN', { payload: { rubric: [null, { criterion: 42 }, { criterion: 'Valid', maxScore: 1 }] } })
+    const user = userEvent.setup(); start('/questions/q1')
+    expect(await screen.findByText('Fix the highlighted fields and save before approving.')).toBeTruthy()
+    await user.click(screen.getByText('Reject draft')); await user.click(screen.getByText('Confirm reject'))
+    expect(await screen.findByRole('heading', { name: 'Rejected question' })).toBeTruthy()
+    expect(initialContent(question('MCQ', { payload: { options: [null] } })).correctIndex).toBe(-1)
+  })
+
 })

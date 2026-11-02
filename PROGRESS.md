@@ -1,3 +1,14 @@
+## Invalid-draft resilience and final validation (2026-11-02)
+
+- Malformed rubric entries and missing MCQ options can be opened and rejected without
+  crashing the editor or enabling approval.
+- Final production build passed. `npm run test:coverage -- --maxWorkers=2` passed all
+  374 tests across 32 files, with 100% statements (1104/1104), branches (792/792),
+  functions (379/379), and lines (1028/1028). Limiting workers avoids local CPU contention
+  with Java/Docker builds; no test timeouts or coverage thresholds were relaxed.
+- Lint passed with seven warnings. The isolated full-stack HTTP/SMTP acceptance passed
+  the review/bank integration, private source-material access checks and tenant isolation.
+
 # Contract completion slice — M4 review and bank (2026-11-02)
 
 - Review now consumes summary-only list responses; full payloads remain in staff detail views.

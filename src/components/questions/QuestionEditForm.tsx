@@ -10,11 +10,16 @@ export function initialContent(question: Question): Record<string, unknown> {
   const content = { ...(question.payload as Record<string, unknown>) }
   if (question.type === 'MCQ') {
     const options = Array.isArray(content.options) ? content.options as { id: string; text: string }[] : []
-    content.correctIndex = options.findIndex(option => option.id === question.correctRef)
+    content.correctIndex = options.findIndex(option => option?.id === question.correctRef)
     content.options = ['a', 'b', 'c', 'd'].map((id, index) => ({ id, text: options[index]?.text ?? '' }))
   }
-  if (question.type === 'WRITTEN' && !Array.isArray(content.rubric)) {
-    content.rubric = Array.from({ length: 3 }, () => ({ criterion: '', maxScore: 1 }))
+  if (question.type === 'WRITTEN') {
+    const rubric = Array.isArray(content.rubric) ? content.rubric : Array.from({ length: 3 }, () => ({ criterion: '', maxScore: 1 }))
+    content.rubric = rubric.map((raw: Partial<Criterion> | null) => ({
+      ...(typeof raw?.id === 'string' ? { id: raw.id } : {}),
+      criterion: typeof raw?.criterion === 'string' ? raw.criterion : '',
+      maxScore: typeof raw?.maxScore === 'number' ? raw.maxScore : 0,
+    }))
   }
   if (question.type === 'NUMERIC') {
     content.tolerance ??= 0
