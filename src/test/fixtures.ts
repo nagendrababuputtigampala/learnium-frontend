@@ -121,6 +121,7 @@ export const batchTwo: BatchDto = {
 export const gradeSubjects: GradeSubject[] = [
   {
     gradeSubjectId: 'gs-1',
+    gradeId: 'grade-8',
     gradeCode: 'G8',
     gradeName: 'Grade 8',
     subjectId: 'subject-math',
@@ -129,6 +130,7 @@ export const gradeSubjects: GradeSubject[] = [
   },
   {
     gradeSubjectId: 'gs-2',
+    gradeId: 'grade-7',
     gradeCode: 'G7',
     gradeName: 'Grade 7',
     subjectId: 'subject-science',

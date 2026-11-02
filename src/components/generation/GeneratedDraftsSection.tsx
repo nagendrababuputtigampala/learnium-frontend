@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { getApiErrorMessage } from '../../lib/api'
 import { useMaterialQuestions } from '../../lib/generation'
 import DraftQuestionCard from './DraftQuestionCard'
 
 /**
- * Read-only preview of a material's generated drafts (review and
+ * Read-only preview of a material's generated questions (review and
  * approval arrive in M4 — deliberately no actions here). The section
  * carries id="generated-drafts" so the job view's "View drafts"
  * action can scroll to it via scrollToDrafts().
@@ -22,20 +23,22 @@ export default function GeneratedDraftsSection({
   return (
     <section
       id="generated-drafts"
-      aria-label="Generated drafts"
+      aria-label="Generated questions"
       className="mt-6 rounded-2xl border border-card-border bg-white p-6 shadow-sm"
     >
-      <h2 className="font-display text-lg font-bold">Generated drafts</h2>
+      <h2 className="font-display text-lg font-bold">Generated questions</h2>
+
+      <Link className="mt-2 inline-block text-sm font-semibold text-indigo-primary" to={`/review?materialId=${materialId}`}>Review this chapter’s questions</Link>
 
       {questionsQuery.isPending && (
-        <p className="mt-3 text-sm text-ink/60">Loading drafts…</p>
+        <p className="mt-3 text-sm text-ink/60">Loading questions…</p>
       )}
 
       {questionsQuery.isError && (
         <p role="alert" className="mt-3 text-sm text-rose-weak">
           {getApiErrorMessage(
             questionsQuery.error,
-            'Could not load the generated drafts.',
+            'Could not load the generated questions.',
           )}
         </p>
       )}
@@ -44,7 +47,7 @@ export default function GeneratedDraftsSection({
         <>
           {data.totalElements === 0 ? (
             <p className="mt-3 text-sm text-ink/60">
-              No drafts yet — generate questions from this chapter.
+              No questions yet — generate questions from this chapter.
             </p>
           ) : (
             <div className="mt-4 space-y-4">

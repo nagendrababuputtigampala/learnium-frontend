@@ -367,7 +367,7 @@ describe('MaterialDetailPage generation', () => {
     ).toBeNull()
     expect(
       await screen.findByText(
-        'No drafts yet — generate questions from this chapter.',
+        'No questions yet — generate questions from this chapter.',
       ),
     ).toBeInTheDocument()
   })

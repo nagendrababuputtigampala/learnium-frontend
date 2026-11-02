@@ -10,6 +10,8 @@ import JoinPage from '../pages/JoinPage'
 import LoginPage from '../pages/LoginPage'
 import MaterialDetailPage from '../pages/MaterialDetailPage'
 import MaterialsPage from '../pages/MaterialsPage'
+import QuestionsPage from '../pages/QuestionsPage'
+import QuestionDetailPage from '../pages/QuestionDetailPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import SetPasswordPage from '../pages/SetPasswordPage'
 import StudentHomePage from '../pages/StudentHomePage'
@@ -27,6 +29,9 @@ export default function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/batches" element={<BatchesPage />} />
+          <Route path="/review" element={<QuestionsPage key="review" />} />
+          <Route path="/question-bank" element={<QuestionsPage key="bank" bank />} />
+          <Route path="/questions/:questionId" element={<QuestionDetailPage />} />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route
             path="/materials/:materialId"

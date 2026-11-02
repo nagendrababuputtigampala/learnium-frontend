@@ -1,3 +1,15 @@
+# Progress — feature/review-and-bank (frontend, 2026-11-02)
+
+- Implemented private review queues, independent grade/subject filters, material grouping,
+  all five type editors, field errors, save/approve/reject, revision-conflict reload,
+  shared bank previews and immutable-question forks with lineage.
+- Generated material questions display review status and link to the review queue.
+- Verified: production build and 350 tests pass; statements, branches, functions and
+  lines all reach 100% coverage. Backend Compose acceptance covers the API contracts.
+- Next: review/merge branch 1, then implement definitions and publishing on `feature/publish`.
+
+---
+
 # Progress — feature/ai-generation (frontend, M3 branch 2)
 
 Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).
