@@ -1,3 +1,16 @@
+# Contract completion slice — M4 review and bank (2026-11-02)
+
+- Review now consumes summary-only list responses; full payloads remain in staff detail views.
+- Added Draft/Approved/Rejected filter chips, material topic/type/status page counts,
+  correct-answer radio controls, inline accessible server field errors, validation hints,
+  approval gating, rubric totals and scoped topic creation through the existing M3 hooks.
+- Bank cards can fork directly into the new editable draft. Rejection remains available
+  for invalid or unsaved content and uses a confirmation dialog.
+- Green slice: production build passed; 373 tests across 32 files passed, with 100%
+  statements (1102/1102), branches (786/786), functions (378/378), lines (1027/1027).
+- Browser automation runtime is unavailable in this session; UI verification uses
+  Testing Library interaction tests. Existing bundle size warning remains.
+
 # Progress — feature/review-and-bank (frontend, 2026-11-02)
 
 - Implemented private review queues, independent grade/subject filters, material grouping,

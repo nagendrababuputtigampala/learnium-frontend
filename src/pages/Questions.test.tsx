@@ -40,7 +40,7 @@ beforeEach(() => {
   stored = question(); rows = [stored]
   mock.get.mockReset(); mock.post.mockReset(); mock.put.mockReset()
   mock.get.mockImplementation(async (url: string) => {
-    if (url === '/questions') return { data: { content: rows, page: 0, size: 12, totalPages: 2, totalElements: rows.length } }
+    if (url === '/questions') return { data: { content: rows.map(row => ({ ...row, stemPreview: 'Question preview' })), page: 0, size: 12, totalPages: 2, totalElements: rows.length } }
     if (url.startsWith('/questions/')) return { data: stored }
     if (url === '/master/grade-subjects') return { data: [{ gradeSubjectId: 'gs', gradeId: 'grade8', gradeCode: 'G8', gradeName: 'Grade 8', subjectId: 'math', subjectName: 'Mathematics', label: 'Grade 8 Mathematics' }] }
     return { data: [{ topicId: 'topic', name: 'Fractions' }, { topicId: 'other', name: 'Decimals' }] }
@@ -50,6 +50,7 @@ beforeEach(() => {
     return { data: stored }
   })
   mock.post.mockImplementation(async (url: string) => {
+    if (url.startsWith('/master/')) return { data: { topicId: 'new-topic', name: 'New topic' } }
     if (url.endsWith('/forks')) stored = { ...stored, questionId: 'fork', status: 'DRAFT', materialId: null, materialTitle: null, sourceQuestionId: 'q1' }
     else stored = { ...stored, status: url.endsWith('/approve') ? 'APPROVED' : 'REJECTED', revision: stored.revision + 1, approvedAt: '2026-11-02T00:00:00Z' }
     return { data: stored }
@@ -69,7 +70,7 @@ describe('M4 review and bank', () => {
     await user.selectOptions(screen.getByLabelText('Topic'), 'other')
     await user.selectOptions(screen.getByLabelText('Question type'), 'FLASHCARD')
     await user.selectOptions(screen.getByLabelText('Difficulty'), '5')
-    await user.selectOptions(screen.getByLabelText('Review status'), 'REJECTED')
+    await user.click(screen.getByRole('button', { name: 'Rejected' }))
     await user.click(screen.getByText('Clear chapter filter'))
     await user.click(screen.getByText('Next'))
     expect(await screen.findByText('Page 2 of 2')).toBeTruthy()
@@ -102,7 +103,7 @@ describe('M4 review and bank', () => {
     if (type === 'MCQ') {
       await user.type(screen.getByLabelText('Question'), ' revised')
       await user.type(screen.getByLabelText('Option 1'), ' revised')
-      await user.selectOptions(screen.getByLabelText('Correct answer'), '1')
+      await user.click(screen.getByRole('radio', { name: 'Option 2 is correct' }))
     } else if (type === 'NUMERIC') {
       for (const label of ['Numeric answer', 'Absolute tolerance']) {
         await user.clear(screen.getByLabelText(label)); await user.type(screen.getByLabelText(label), '3')
@@ -116,6 +117,7 @@ describe('M4 review and bank', () => {
       await user.click(screen.getByText('Add criterion')); await user.click(screen.getByText('Add criterion'))
       expect(screen.getByText('Add criterion')).toBeDisabled()
       await user.click(screen.getByText('Remove criterion 4'))
+      await user.type(screen.getByLabelText('Criterion 4'), 'Additional reasoning')
     } else {
       const field = type === 'FLASHCARD' ? 'Back' : 'Answer'
       await user.type(screen.getByLabelText(field), ' revised')
@@ -142,11 +144,11 @@ describe('M4 review and bank', () => {
   it('views approved questions in the bank and forks them into editable drafts', async () => {
     stored = question('MCQ', { status: 'APPROVED', approvedAt: '2026-11-02T00:00:00Z' }); rows = [stored]
     const user = userEvent.setup(); start('/question-bank')
-    await user.click(await screen.findByRole('link', { name: 'View / fork' }))
+    await user.click(await screen.findByRole('link', { name: 'View approved question' }))
     expect(await screen.findByRole('heading', { name: 'Approved question' })).toBeTruthy()
     await user.click(screen.getByText('Fork to a new draft'))
     expect(await screen.findByRole('heading', { name: 'Review draft' })).toBeTruthy()
-    expect(mock.post).toHaveBeenCalledWith('/questions/q1/forks', { revision: 0 })
+    expect(mock.post).toHaveBeenCalledWith('/questions/q1/forks', {})
     expect(screen.getByRole('link', { name: 'View original approved question' })).toHaveAttribute('href', '/questions/q1')
   })
 
@@ -169,7 +171,7 @@ describe('M4 review and bank', () => {
     const user = userEvent.setup(); start('/questions/q1'); await screen.findByText('Save draft')
     await user.type(screen.getByLabelText('Question'), ' invalid')
     await user.click(screen.getByText('Save draft'))
-    expect(await screen.findByText('content.stem: Required')).toBeTruthy()
+    expect(await screen.findByText('Required')).toBeTruthy()
     await user.click(screen.getByText('Reload latest question'))
     await waitFor(() => expect(screen.getByLabelText('Question')).toHaveValue('Which is half?'))
     expect(mock.post).not.toHaveBeenCalled()
@@ -188,4 +190,56 @@ describe('M4 review and bank', () => {
     expect(initialContent(question('MCQ', { payload: {} }))).toMatchObject({ correctIndex: -1, options: [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }] })
     expect(initialContent(question('WRITTEN', { payload: {} })).rubric).toHaveLength(3)
   })
+  it.each(['MCQ', 'FILL_BLANK', 'FLASHCARD', 'NUMERIC', 'WRITTEN'] as const)('blocks approval of invalid %s content but still allows rejection', async type => {
+    stored = question(type, { payload: {} })
+    const user = userEvent.setup(); start('/questions/q1')
+    expect(await screen.findByText('Fix the highlighted fields and save before approving.')).toBeTruthy()
+    expect(screen.getByText('Approve saved draft')).toBeDisabled()
+    await user.click(screen.getByText('Reject draft'))
+    expect(screen.getByRole('dialog', { name: 'Reject draft confirmation' })).toBeTruthy()
+    await user.click(screen.getByText('Confirm reject'))
+    expect(await screen.findByRole('heading', { name: 'Rejected question' })).toBeTruthy()
+    expect(mock.put).not.toHaveBeenCalled()
+  })
+
+  it('adds a topic within the fixed pairing and handles failures without submitting the draft', async () => {
+    const user = userEvent.setup(); start('/questions/q1'); await screen.findByText('Save draft')
+    expect(screen.getByText('Add topic')).toBeDisabled()
+    await user.type(screen.getByLabelText('New topic'), '  New topic  ')
+    mock.post.mockRejectedValueOnce(new Error('offline'))
+    await user.click(screen.getByText('Add topic'))
+    expect(await screen.findByText('Could not add the topic.')).toBeTruthy()
+    await user.click(screen.getByText('Add topic'))
+    await waitFor(() => expect(screen.getByLabelText('Topic')).toHaveValue('new-topic'))
+    expect(mock.post).toHaveBeenLastCalledWith('/master/grade-subjects/gs/topics', { name: 'New topic' })
+    expect(mock.put).not.toHaveBeenCalled()
+    expect(screen.getByText('Approve saved draft')).toBeDisabled()
+    await user.click(screen.getByText('Save draft'))
+    expect(await screen.findByRole('status')).toHaveTextContent('Draft saved')
+    expect(mock.put).toHaveBeenLastCalledWith('/questions/q1', expect.objectContaining({ topicId: 'new-topic' }))
+  })
+
+  it('forks directly from bank cards and reports a failed fork', async () => {
+    stored = question('MCQ', { status: 'APPROVED' }); rows = [stored]
+    const user = userEvent.setup(); start('/question-bank')
+    mock.post.mockRejectedValueOnce(new Error('offline'))
+    await user.click(await screen.findByRole('button', { name: 'Fork' }))
+    expect(await screen.findByText('Could not fork this question.')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Fork' }))
+    expect(await screen.findByRole('heading', { name: 'Review draft' })).toBeTruthy()
+    expect(mock.post).toHaveBeenLastCalledWith('/questions/q1/forks', {})
+  })
+
+  it('shows material topics, page counts by type/status, and the approved status chip', async () => {
+    stored = question('MCQ', { status: 'APPROVED' }); rows = [stored]
+    const user = userEvent.setup(); start()
+    await user.click(screen.getByRole('button', { name: 'Approved' }))
+    expect(await screen.findByText('Topics: Fractions')).toBeTruthy()
+    expect(screen.getByText(/On this page: Multiple choice: 1/)).toBeTruthy()
+    expect(screen.getByText(/DRAFT: 0 · APPROVED: 1 · REJECTED: 0/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Approved' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('link', { name: 'View approved question' })).toBeTruthy()
+    expect(mock.get).toHaveBeenCalledWith('/questions', expect.objectContaining({ params: expect.objectContaining({ status: 'APPROVED' }) }))
+  })
+
 })

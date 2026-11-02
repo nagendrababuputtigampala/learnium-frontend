@@ -62,7 +62,7 @@ const QUESTION_TYPE_INFO: Record<QuestionTypeCode, QuestionTypeInfo> = {
   },
   FLASHCARD: {
     label: 'Flashcard',
-    chipClassName: 'bg-marigold/20 text-ink',
+    chipClassName: 'bg-marigold text-ink',
   },
   // No dedicated theme colour exists for numeric questions; the
   // palette's bright indigo keeps it in the MCQ family while staying

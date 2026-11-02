@@ -32,15 +32,14 @@ export default function QuestionDetailPage() {
     {question!.sourceQuestionId && <Link className="block text-sm text-indigo-primary" to={`/questions/${question!.sourceQuestionId}`}>View original approved question</Link>}
     <QuestionPreview question={question!} />
     {notice && <p role="status" className="rounded-lg bg-emerald-progress/10 p-3">{notice}</p>}
-    {action.isError && <div role="alert" className="rounded-lg bg-rose-weak/10 p-3"><p>{getApiErrorMessage(action.error, 'Could not update this question.')}</p>{errors && <ul>{Object.entries(errors).map(([field, message]) => <li key={field}>{field}: {message}</li>)}</ul>}<button className="mt-2 underline" onClick={() => { setDirty(false); setReloadEpoch(value => value + 1); action.reset(); void query.refetch() }}>Reload latest question</button></div>}
+    {action.isError && <div role="alert" className="rounded-lg bg-rose-weak/10 p-3"><p>{getApiErrorMessage(action.error, 'Could not update this question.')}</p><button className="mt-2 underline" onClick={() => { setDirty(false); setReloadEpoch(value => value + 1); action.reset(); void query.refetch() }}>Reload latest question</button></div>}
     {question!.status === 'DRAFT' ? <>
-      <QuestionEditForm key={`${question!.questionId}:${question!.revision}:${reloadEpoch}`} question={question!} pending={action.isPending} onDirty={setDirty} onSave={edit => {
+      <QuestionEditForm key={`${question!.questionId}:${question!.revision}:${reloadEpoch}`} question={question!} pending={action.isPending} dirty={dirty} serverErrors={errors} onApprove={() => run('approve')} onDirty={setDirty} onSave={edit => {
         action.mutate({ question: question!, action: 'save', edit }, { onSuccess: () => { setDirty(false); setNotice('Draft saved. You can approve it when ready.') } })
       }} />
       <div className="flex flex-wrap gap-3">
-        <button disabled={action.isPending || dirty} className="rounded-full bg-emerald-progress px-5 py-2 font-semibold text-white" onClick={() => run('approve')}>Approve saved draft</button>
         <button disabled={action.isPending} className="rounded-full border border-rose-weak px-5 py-2 text-rose-weak" onClick={() => setRejectConfirm(true)}>Reject draft</button>
-        {rejectConfirm && <><p>Reject this draft? It cannot be edited afterwards.</p><button disabled={action.isPending} onClick={() => run('reject')}>Confirm reject</button><button onClick={() => setRejectConfirm(false)}>Keep draft</button></>}
+        {rejectConfirm && <div role="dialog" aria-label="Reject draft confirmation"><p>Reject this draft? It cannot be edited afterwards.</p><button disabled={action.isPending} onClick={() => run('reject')}>Confirm reject</button><button onClick={() => setRejectConfirm(false)}>Keep draft</button></div>}
       </div><p className="text-sm text-ink/60">Save edits before approving. Rejection does not require valid content.</p>
     </> : question!.status === 'APPROVED' ? <>
       <p className="text-sm">Approved{question!.approvedAt && <> on {question!.approvedAt.slice(0, 10)}</>}. This question is immutable. Fork it to make changes.</p>

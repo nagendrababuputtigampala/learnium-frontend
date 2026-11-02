@@ -56,6 +56,10 @@ Work flows **feature branch → `dev` → `master`**:
 
 ## M4 review and bank
 
+Lists use bounded summaries; open a question for its complete content and answer key.
+Review supports status chips, material page counts, inline field errors, topic creation
+and approval of saved valid drafts. Bank cards can fork directly into review.
+
 Staff routes: `/review`, `/question-bank`, `/questions/:questionId`. Review is creator/admin
 scoped; the approved bank is shared within the centre. Approval requires saved, valid content;
 changing an approved question forks a new draft. Material previews link to their review queue.

@@ -22,6 +22,8 @@ export interface Question extends Omit<GeneratedQuestionDto, 'type' | 'provider'
   model: string | null
   promptVersion: string | null
 }
+export type QuestionSummary = Pick<Question, 'questionId' | 'type' | 'status' | 'gradeSubjectId' | 'gradeName' | 'subjectName' | 'topicId' | 'topicName' | 'difficulty' | 'materialId' | 'materialTitle' | 'createdBy' | 'createdAt' | 'approvedBy' | 'approvedAt'> & { stemPreview: string }
+
 export interface QuestionFilters {
   status: Question['status']
   gradeId: string
@@ -43,7 +45,7 @@ export function useQuestions(filters: QuestionFilters, page: number) {
     queryKey: ['questions', user?.centreId, user?.userId, filters, page],
     queryFn: async () => {
       const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''))
-      const response = await apiClient.get<PageResponse<Question>>('/questions', { params: { ...params, page, size: 12 } })
+      const response = await apiClient.get<PageResponse<QuestionSummary>>('/questions', { params: { ...params, page, size: 12 } })
       return response.data
     },
   })
@@ -60,11 +62,11 @@ export function useQuestionAction() {
   const { user } = useAuth()
   return useMutation({
     mutationFn: async ({ question, action, edit }: {
-      question: Question, action: 'save' | 'approve' | 'reject' | 'forks', edit?: QuestionEdit
+      question: Pick<Question, 'questionId'> & { revision?: number }, action: 'save' | 'approve' | 'reject' | 'forks', edit?: QuestionEdit
     }) => {
       const response = action === 'save'
         ? await apiClient.put<Question>(`/questions/${question.questionId}`, edit)
-        : await apiClient.post<Question>(`/questions/${question.questionId}/${action}`, { revision: question.revision })
+        : await apiClient.post<Question>(`/questions/${question.questionId}/${action}`, action === 'forks' ? {} : { revision: question.revision })
       return response.data
     },
     onSuccess: result => {
