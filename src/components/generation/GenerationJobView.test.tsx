@@ -113,6 +113,27 @@ describe('GenerationJobView', () => {
     ).toBeTruthy()
   })
 
+  it.each(['PENDING', 'RUNNING'] as const)(
+    'keeps zero-valid advice focused on the automatic retry while %s',
+    async (status) => {
+      serveJob({ ...jobDetailFailedZeroValid, status, attempts: status === 'RUNNING' ? 2 : 1 })
+      renderView()
+      expect(await screen.findByText('One attempt didn’t work')).toBeTruthy()
+      expect(screen.getByText(/none of its questions passed/)).toBeTruthy()
+      expect(screen.queryByText(/different mix/)).toBeNull()
+      expect(screen.getByText(status === 'RUNNING'
+        ? 'Retrying now — attempt 2 of 2.' : 'It will retry automatically.')).toBeTruthy()
+    },
+  )
+
+  it('offers a different mix only after zero-valid retries are exhausted', async () => {
+    serveJob(jobDetailFailedZeroValid)
+    renderView()
+    expect(await screen.findByText('No usable questions came back')).toBeTruthy()
+    expect(screen.getByText(/different mix/)).toBeTruthy()
+    expect(screen.queryByText(/retry automatically/)).toBeNull()
+  })
+
   it('shows per-type results, drop reasons and token usage on success', async () => {
     serveJob(jobDetailSucceeded)
     renderView()

@@ -220,6 +220,11 @@ export default function GenerationJobView({
           <p className="mt-1">
             {failureKindInfo(job.failureKind).explanation}
           </p>
+          {job.failureKind === 'ZERO_VALID' && (
+            <p className="mt-1">
+              Try again, or ask for a different mix of question types.
+            </p>
+          )}
         </div>
       )}
 
