@@ -1,3 +1,39 @@
+## Invalid-draft resilience and final validation (2026-11-02)
+
+- Malformed rubric entries and missing MCQ options can be opened and rejected without
+  crashing the editor or enabling approval.
+- Final production build passed. `npm run test:coverage -- --maxWorkers=2` passed all
+  374 tests across 32 files, with 100% statements (1104/1104), branches (792/792),
+  functions (379/379), and lines (1028/1028). Limiting workers avoids local CPU contention
+  with Java/Docker builds; no test timeouts or coverage thresholds were relaxed.
+- Lint passed with seven warnings. The isolated full-stack HTTP/SMTP acceptance passed
+  the review/bank integration, private source-material access checks and tenant isolation.
+
+# Contract completion slice — M4 review and bank (2026-11-02)
+
+- Review now consumes summary-only list responses; full payloads remain in staff detail views.
+- Added Draft/Approved/Rejected filter chips, material topic/type/status page counts,
+  correct-answer radio controls, inline accessible server field errors, validation hints,
+  approval gating, rubric totals and scoped topic creation through the existing M3 hooks.
+- Bank cards can fork directly into the new editable draft. Rejection remains available
+  for invalid or unsaved content and uses a confirmation dialog.
+- Green slice: production build passed; 373 tests across 32 files passed, with 100%
+  statements (1102/1102), branches (786/786), functions (378/378), lines (1027/1027).
+- Browser automation runtime is unavailable in this session; UI verification uses
+  Testing Library interaction tests. Existing bundle size warning remains.
+
+# Progress — feature/review-and-bank (frontend, 2026-11-02)
+
+- Implemented private review queues, independent grade/subject filters, material grouping,
+  all five type editors, field errors, save/approve/reject, revision-conflict reload,
+  shared bank previews and immutable-question forks with lineage.
+- Generated material questions display review status and link to the review queue.
+- Verified: production build and 350 tests pass; statements, branches, functions and
+  lines all reach 100% coverage. Backend Compose acceptance covers the API contracts.
+- Next: review/merge branch 1, then implement definitions and publishing on `feature/publish`.
+
+---
+
 # Progress — feature/ai-generation (frontend, M3 branch 2)
 
 Branched off dev 8cdb42ef (M2 + branch 1 merged via PR #9).

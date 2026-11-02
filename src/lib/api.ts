@@ -79,6 +79,7 @@ export interface BatchDto {
 }
 
 export interface GradeSubject {
+  gradeId: string
   gradeSubjectId: string
   gradeCode: string
   gradeName: string
@@ -228,6 +229,7 @@ export interface GeneratedQuestionDto {
   promptVersion: string
   generationJobId: string
   createdAt: string
+  status?: 'DRAFT' | 'APPROVED' | 'REJECTED'
 }
 
 export interface PublicCentre {

@@ -55,7 +55,7 @@ describe('GeneratedDraftsSection', () => {
       <GeneratedDraftsSection materialId="mat-1" />,
     )
     expect(view.container.querySelector('#generated-drafts')).not.toBeNull()
-    expect(screen.getByText('Loading drafts…')).toBeTruthy()
+    expect(screen.getByText('Loading questions…')).toBeTruthy()
   })
 
   it('surfaces the backend message when drafts fail to load', async () => {
@@ -71,7 +71,7 @@ describe('GeneratedDraftsSection', () => {
     mock.get.mockRejectedValue(new Error('network down'))
     renderWithProviders(<GeneratedDraftsSection materialId="mat-1" />)
     const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toBe('Could not load the generated drafts.')
+    expect(alert.textContent).toBe('Could not load the generated questions.')
   })
 
   it('shows the empty state with no pagination', async () => {
@@ -79,7 +79,7 @@ describe('GeneratedDraftsSection', () => {
     renderWithProviders(<GeneratedDraftsSection materialId="mat-1" />)
     expect(
       await screen.findByText(
-        'No drafts yet — generate questions from this chapter.',
+        'No questions yet — generate questions from this chapter.',
       ),
     ).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Next' })).toBeNull()

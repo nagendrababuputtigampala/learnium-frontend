@@ -223,8 +223,10 @@ function renderBody(question: GeneratedQuestionDto): ReactNode | null {
 
 export default function DraftQuestionCard({
   question,
+  showProvenance = true,
 }: {
   question: GeneratedQuestionDto
+  showProvenance?: boolean
 }) {
   const body = renderBody(question)
   return (
@@ -237,6 +239,7 @@ export default function DraftQuestionCard({
             Question
           </span>
         )}
+        {question.status && <span className="text-xs font-semibold text-ink/60">{{ DRAFT: 'Draft', APPROVED: 'Approved', REJECTED: 'Rejected' }[question.status]}</span>}
       </div>
       {body === null ? (
         <p className="mt-2 text-sm text-ink/60">
@@ -246,10 +249,10 @@ export default function DraftQuestionCard({
       ) : (
         body
       )}
-      <footer className="mt-3 border-t border-card-border pt-2 text-xs text-ink/60">
+      {showProvenance && <footer className="mt-3 border-t border-card-border pt-2 text-xs text-ink/60">
         {question.provider} · {question.model} · Prompt{' '}
         {question.promptVersion} · {question.createdAt.slice(0, 10)}
-      </footer>
+      </footer>}
     </article>
   )
 }

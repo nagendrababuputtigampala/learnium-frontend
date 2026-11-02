@@ -53,3 +53,22 @@ Work flows **feature branch → `dev` → `master`**:
   tagging `master` as **`legacy-demo`** before this rewrite began; that tag is
   the old demo, do not build on it.
 - Feature branches are cut from `dev` and merged back into `dev` after review.
+
+## M4 review and bank
+
+Lists use bounded summaries; open a question for its complete content and answer key.
+Review supports status chips, material page counts, inline field errors, topic creation
+and approval of saved valid drafts. Bank cards can fork directly into review.
+
+Staff routes: `/review`, `/question-bank`, `/questions/:questionId`. Review is creator/admin
+scoped; the approved bank is shared within the centre. Approval requires saved, valid content;
+changing an approved question forks a new draft. Material previews link to their review queue.
+
+For an isolated backend on another port:
+
+```sh
+VITE_API_PROXY_TARGET=http://localhost:8081 npm run dev -- --port 5174
+```
+
+The default proxy remains `http://localhost:8080`. The backend's
+`docs/m4-review-api.md` and `docs/m4-requirements.md` describe the API and settled M4 policies.
