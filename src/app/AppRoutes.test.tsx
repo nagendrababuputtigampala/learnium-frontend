@@ -50,6 +50,11 @@ function seedSession(user: AuthUser) {
     if (url === '/materials/mat-1') {
       return Promise.resolve({ data: materialDetailOk })
     }
+    if (url === '/materials/mat-1/questions') {
+      return Promise.resolve({
+        data: { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 },
+      })
+    }
     if (url === '/admin/teachers') {
       return Promise.resolve({
         data: { content: [], page: 0, size: 1, totalElements: 2, totalPages: 2 },

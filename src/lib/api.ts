@@ -139,6 +139,97 @@ export interface MaterialDetailDto extends MaterialDto {
   extractedText: string | null
 }
 
+export type QuestionTypeCode =
+  | 'MCQ'
+  | 'FILL_BLANK'
+  | 'FLASHCARD'
+  | 'NUMERIC'
+  | 'WRITTEN'
+
+export type GenerationDifficulty = 'EASY' | 'MEDIUM' | 'HARD'
+
+export type GenerationJobStatus =
+  | 'PENDING'
+  | 'RUNNING'
+  | 'SUCCEEDED'
+  | 'FAILED'
+
+/**
+ * Why a generation job failed. MODEL_ERROR, MALFORMED_RESPONSE and
+ * TRUNCATED are transient (the backend retries them, bounded); the
+ * rest are terminal.
+ */
+export type GenerationFailureKind =
+  | 'MODEL_ERROR'
+  | 'MALFORMED_RESPONSE'
+  | 'SAFETY_REFUSAL'
+  | 'TRUNCATED'
+  | 'ZERO_VALID'
+  | 'MATERIAL_DELETED'
+
+export interface Topic {
+  topicId: string
+  name: string
+}
+
+export interface GenerateJobRequest {
+  topicId: string
+  counts: Partial<Record<QuestionTypeCode, number>>
+  difficulty: GenerationDifficulty
+}
+
+export interface GenerationJobDto {
+  id: string
+  materialId: string
+  topicId: string
+  status: GenerationJobStatus
+  requestedCounts: Partial<Record<QuestionTypeCode, number>>
+  difficulty: GenerationDifficulty
+  provider: string
+  model: string
+  attempts: number
+  createdAt: string
+}
+
+export interface GenerationTypeResult {
+  requested: number
+  received: number
+  accepted: number
+  dropped: number
+  dropReasons: Record<string, number>
+}
+
+export interface GenerationJobDetailDto extends GenerationJobDto {
+  promptVersion: string
+  payloadSchemaVersion: string
+  contentHash: string | null
+  failureKind: GenerationFailureKind | null
+  resultCounts: Partial<Record<QuestionTypeCode, GenerationTypeResult>> | null
+  usageInputTokens: number | null
+  usageOutputTokens: number | null
+  usageThinkingTokens: number | null
+  updatedAt: string
+  finishedAt: string | null
+}
+
+export interface GeneratedQuestionDto {
+  questionId: string
+  type: QuestionTypeCode
+  topicId: string
+  /**
+   * Type-specific display payload (shape set by the backend's draft
+   * factory). Typed as unknown on purpose: renderers must validate
+   * before use and fall back gracefully on anything unexpected.
+   */
+  payload: unknown
+  correctRef: string
+  provider: string
+  model: string
+  promptVersion: string
+  generationJobId: string
+  createdAt: string
+}
+
 export interface PublicCentre {
   centreId: string
   name: string
