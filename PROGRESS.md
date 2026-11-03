@@ -12,9 +12,14 @@
   unassigned late-joiner selection and confirmable code regeneration/early close.
 - Existing session/centre query scoping, shared API client and route guards are reused.
   No student player, marking queue UI or capture features were introduced.
-- Green: production build and all 409 tests across 34 files passed. Coverage gates remain
-  100% statements (1310/1310), branches (972/972), functions (491/491), lines (1165/1165).
-- Next: full-stack publishing acceptance and final PR evidence.
+- Form handlers independently reject invalid and duplicate implicit submissions while save
+  or publish requests are pending; disabled controls are not the only safety boundary.
+- Final production build and all 412 tests across 34 files passed. Coverage gates remain
+  100% statements (1314/1314), branches (980/980), functions (491/491), lines (1166/1166).
+- Lint passed with the same seven pre-existing warnings. Fresh production-container
+  acceptance passed migrations, nginx routing, authenticated M2 onboarding, M4 review/bank
+  and the complete publish/instance lifecycle.
+- Next: none on this branch — frontend branch 2 is ready for review.
 
 ## Invalid-draft resilience and final validation (2026-11-02)
 
