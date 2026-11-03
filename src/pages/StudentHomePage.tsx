@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { BookOpen, Clock3, LogOut, Trophy } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiClient, getApiErrorMessage, type StudentTest, type StudentTestState } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
@@ -11,6 +12,12 @@ const tabs: { value: StudentTestState; label: string }[] = [
 ]
 
 function TestCard({ test }: { test: StudentTest }) {
+  const navigate = useNavigate()
+  const open = () => {
+    if (test.kind === 'FLASHCARD_PRACTICE') navigate(`/student/tests/${test.instanceId}/practice`)
+    else if (test.state === 'COMPLETED' && test.latestAttemptId) navigate(`/student/attempts/${test.latestAttemptId}/result`)
+    else navigate(`/student/tests/${test.instanceId}`)
+  }
   return (
     <article className="rounded-2xl border border-indigo-bright/20 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
@@ -26,6 +33,7 @@ function TestCard({ test }: { test: StudentTest }) {
         {test.totalSoFar !== null && <span className="inline-flex items-center gap-1.5"><Trophy size={15} />Score {test.totalSoFar}</span>}
         {test.markingPending && <span className="font-semibold text-amber-700">Marking pending</span>}
       </div>
+      {test.state !== 'UPCOMING' && <button type="button" onClick={open} className="mt-5 rounded-full bg-indigo-primary px-5 py-2 text-sm font-bold text-white hover:bg-indigo-bright">{test.kind === 'FLASHCARD_PRACTICE' ? 'Practise cards' : test.state === 'COMPLETED' ? 'View results' : test.latestAttemptStatus === 'IN_PROGRESS' ? 'Resume test' : 'Start test'}</button>}
     </article>
   )
 }

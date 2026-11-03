@@ -1,5 +1,21 @@
 # Progress — feature/student-flow (M5)
 
+## Checkpoint B — student player, results and practice (2026-11-03)
+
+- Added the student test player with start/resume, one-question navigation, answered-state
+  indicators, typed autosave, server-deadline countdown, save-and-next and unanswered review.
+- Added submission routing and the result view for objective, pending-marking and confirmed
+  states. Answer keys, solutions and feedback render only when the backend release policy
+  includes them.
+- Added the flashcard practice player with card flipping, Know it / Still learning controls
+  and deliberately client-only progress. Tests-home cards now route to start, resume, result
+  or practice as appropriate.
+- Final verification: 415 tests across 37 files pass. Coverage is 100% statements
+  (1401/1401), branches (1132/1132), functions (536/536) and lines (1148/1148).
+  Lint and the production build pass; the existing non-blocking compiler hints and bundle
+  size warning remain.
+- Checkpoint B is complete and committed before Part 3; no Part 3 work has started.
+
 ## Checkpoint A — unified student login and Tests home (2026-11-03)
 
 - Removed the PIN join/session UI and storage. The unified login accepts staff email or

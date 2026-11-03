@@ -17,6 +17,9 @@ import QuestionDetailPage from '../pages/QuestionDetailPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import SetPasswordPage from '../pages/SetPasswordPage'
 import StudentHomePage from '../pages/StudentHomePage'
+import StudentPlayerPage from '../pages/StudentPlayerPage'
+import StudentResultPage from '../pages/StudentResultPage'
+import PracticePlayerPage from '../pages/PracticePlayerPage'
 import TeachersPage from '../pages/TeachersPage'
 
 export default function AppRoutes() {
@@ -28,6 +31,9 @@ export default function AppRoutes() {
       <Route path="/join" element={<Navigate to="/login" replace />} />
       <Route element={<StudentRoute />}>
         <Route path="/student" element={<StudentHomePage />} />
+        <Route path="/student/tests/:instanceId" element={<StudentPlayerPage />} />
+        <Route path="/student/attempts/:attemptId/result" element={<StudentResultPage />} />
+        <Route path="/student/tests/:instanceId/practice" element={<PracticePlayerPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<StaffRoute />}>

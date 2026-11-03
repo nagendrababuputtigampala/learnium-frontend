@@ -117,11 +117,30 @@ export interface StudentTest {
   closesAt: string
   maxAttempts: number
   attemptsUsed: number
+  latestAttemptId: string | null
   latestAttemptStatus: string | null
   state: StudentTestState
   totalSoFar: number | null
   markingPending: boolean
 }
+
+export type AttemptStatus = 'IN_PROGRESS' | 'SUBMITTED' | 'AUTO_SUBMITTED' | 'INVALIDATED'
+export interface AttemptItem { itemId: string; order: number; type: QuestionTypeCode; marks: number; payload: Record<string, unknown> }
+export interface SavedAnswer { itemId: string; answer: Record<string, unknown>; savedAt: string }
+export interface StudentAttempt {
+  attemptId: string; instanceId: string; definitionName: string; attemptNo: number; status: AttemptStatus
+  startedAt: string; deadlineAt: string; remainingSeconds: number; items: AttemptItem[]; answers: SavedAnswer[]
+}
+export type ResultItemState = 'CORRECT' | 'INCORRECT' | 'PENDING_MARKING' | 'CONFIRMED'
+export interface AttemptResultItem extends AttemptItem {
+  answer: Record<string, unknown> | null; state: ResultItemState; score: number
+  solution: Record<string, unknown> | null; feedback: string | null
+}
+export interface AttemptResult {
+  attemptId: string; status: AttemptStatus; submittedAt: string; score: number; maximumScore: number
+  markingPending: boolean; answersReleased: boolean; items: AttemptResultItem[]
+}
+export interface Practice { instanceId: string; definitionName: string; cards: AttemptItem[] }
 
 export type MaterialSourceType = 'PDF' | 'TEXT'
 
