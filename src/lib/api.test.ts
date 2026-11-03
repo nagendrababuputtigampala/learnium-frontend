@@ -10,27 +10,20 @@ import {
   advanceSessionGeneration,
   API_BASE_URL,
   apiClient,
-  clearStudentSession,
   clearTokens,
   createApiClient,
   getAccessToken,
   getApiErrorMessage,
   getRefreshToken,
   getSessionGeneration,
-  getStudent,
   isStaleSessionError,
   refreshAccessToken,
-  saveStudentSession,
   setAccessToken,
   setRefreshToken,
   setSessionExpiredHandler,
   StaleSessionError,
 } from './api'
-import {
-  loginResponseFor,
-  studentProfile,
-  teacherUser,
-} from '../test/fixtures'
+import { loginResponseFor, teacherUser } from '../test/fixtures'
 
 describe('api client', () => {
   it('defaults the base URL to /api/v1 when no env override is set', () => {
@@ -165,22 +158,6 @@ describe('token storage', () => {
     expect(getRefreshToken()).toBeNull()
   })
 
-  it('round-trips a student session through sessionStorage', () => {
-    expect(getStudent()).toBeNull()
-    saveStudentSession({
-      accessToken: 'student-token',
-      tokenType: 'Bearer',
-      expiresInSeconds: 43200,
-      student: studentProfile,
-    })
-    expect(sessionStorage.getItem('learnium.studentToken')).toBe(
-      'student-token',
-    )
-    expect(getStudent()).toEqual(studentProfile)
-    clearStudentSession()
-    expect(getStudent()).toBeNull()
-    expect(sessionStorage.getItem('learnium.studentToken')).toBeNull()
-  })
 })
 
 describe('getApiErrorMessage', () => {

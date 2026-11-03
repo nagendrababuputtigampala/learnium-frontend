@@ -15,14 +15,16 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '/api/v
 /* API contract types                                                  */
 /* ------------------------------------------------------------------ */
 
-export type Role = 'CENTRE_ADMIN' | 'TEACHER'
+export type Role = 'CENTRE_ADMIN' | 'TEACHER' | 'STUDENT'
 
 export interface AuthUser {
   userId: string
   displayName: string
-  email: string
+  email: string | null
+  username: string | null
   role: Role
   centreId: string
+  centreCode: string
   centreName: string
 }
 
@@ -32,22 +34,6 @@ export interface LoginResponse {
   tokenType: string
   expiresInSeconds: number
   user: AuthUser
-}
-
-export interface StudentProfile {
-  userId: string
-  displayName: string
-  membershipId: string
-  batchId: string
-  batchName: string
-  centreId: string
-}
-
-export interface StudentSessionResponse {
-  accessToken: string
-  tokenType: string
-  expiresInSeconds: number
-  student: StudentProfile
 }
 
 export interface PageResponse<T> {
@@ -91,23 +77,50 @@ export interface GradeSubject {
 export interface RosterStudent {
   membershipId: string
   userId: string
-  fullName: string
+  displayName: string
+  username: string
+  contactEmail: string | null
   status: string
-  pinLocked: boolean
+  inviteStatus: 'NOT_SENT' | 'PENDING' | 'ACCEPTED'
 }
 
 export interface CreatedStudent {
   membershipId: string
   userId: string
-  fullName: string
-  pin: string
+  displayName: string
+  username: string
+  inviteStatus: 'NOT_SENT' | 'SENT' | 'PENDING' | 'ACCEPTED'
 }
 
 export interface CentreDto {
   centreId: string
   name: string
+  code: string
   logoUrl: string
   contactEmail: string
+}
+
+export interface StudentLookup {
+  id: string
+  displayName: string
+  username: string
+}
+
+export type StudentTestState = 'AVAILABLE' | 'UPCOMING' | 'COMPLETED'
+
+export interface StudentTest {
+  instanceId: string
+  definitionName: string
+  kind: string
+  batchName: string
+  opensAt: string
+  closesAt: string
+  maxAttempts: number
+  attemptsUsed: number
+  latestAttemptStatus: string | null
+  state: StudentTestState
+  totalSoFar: number | null
+  markingPending: boolean
 }
 
 export type MaterialSourceType = 'PDF' | 'TEXT'
@@ -255,8 +268,6 @@ export interface ApiErrorBody {
 /* ------------------------------------------------------------------ */
 
 export const REFRESH_TOKEN_KEY = 'learnium.refreshToken'
-export const STUDENT_TOKEN_KEY = 'learnium.studentToken'
-export const STUDENT_KEY = 'learnium.student'
 
 let accessToken: string | null = null
 
@@ -285,22 +296,6 @@ export function clearTokens(): void {
   accessToken = null
   setRefreshToken(null)
   advanceSessionGeneration()
-}
-
-/** Persists a student join session (token + profile) in sessionStorage. */
-export function saveStudentSession(session: StudentSessionResponse): void {
-  sessionStorage.setItem(STUDENT_TOKEN_KEY, session.accessToken)
-  sessionStorage.setItem(STUDENT_KEY, JSON.stringify(session.student))
-}
-
-export function getStudent(): StudentProfile | null {
-  const raw = sessionStorage.getItem(STUDENT_KEY)
-  return raw === null ? null : (JSON.parse(raw) as StudentProfile)
-}
-
-export function clearStudentSession(): void {
-  sessionStorage.removeItem(STUDENT_TOKEN_KEY)
-  sessionStorage.removeItem(STUDENT_KEY)
 }
 
 /* ------------------------------------------------------------------ */
@@ -427,7 +422,7 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean
 }
 
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh', '/auth/student-session']
+const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh']
 
 function isNoRefreshPath(url: string | undefined): boolean {
   return url !== undefined && NO_REFRESH_PATHS.some((path) => url.includes(path))

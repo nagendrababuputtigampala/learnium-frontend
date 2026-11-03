@@ -1,4 +1,21 @@
-# Progress — feature/publish (M4 branch 2)
+# Progress — feature/student-flow (M5)
+
+## Checkpoint A — unified student login and Tests home (2026-11-03)
+
+- Removed the PIN join/session UI and storage. The unified login accepts staff email or
+  `username@centrecode`, routes by role, and enforces independent staff/student guards.
+- Rebuilt roster management around real student accounts: optional contact email,
+  suggested/editable usernames with live availability, existing-student selection, bulk
+  add, rename, resend invite and membership deactivation, all centre-query scoped.
+- Added the student-themed Tests home with assigned test cards, tabs, score/pending states,
+  loading/error/empty handling and logout. `/join` now redirects to the unified login.
+- Final verification: 399 tests across 34 files pass. Coverage is 100% statements
+  (1288/1288), branches (1001/1001), functions (492/492) and lines (1104/1104).
+  Production build and lint pass; lint retains seven non-blocking existing/compiler hints.
+- Checkpoint A is complete. No player, autosave, submission, result or practice UI from
+  Part 2 has started.
+
+# Earlier progress — feature/publish (M4 branch 2)
 
 ## S1 — definition, publish and instance UI (2026-11-02)
 
