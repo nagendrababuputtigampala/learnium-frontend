@@ -11,6 +11,9 @@ import LoginPage from '../pages/LoginPage'
 import MaterialDetailPage from '../pages/MaterialDetailPage'
 import MaterialsPage from '../pages/MaterialsPage'
 import QuestionsPage from '../pages/QuestionsPage'
+import TestsPage from '../pages/TestsPage'
+import InstancesPage from '../pages/InstancesPage'
+import TestBuilderPage from '../pages/TestBuilderPage'
 import QuestionDetailPage from '../pages/QuestionDetailPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import SetPasswordPage from '../pages/SetPasswordPage'
@@ -29,6 +32,11 @@ export default function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/batches" element={<BatchesPage />} />
+          <Route path="/instances" element={<InstancesPage />} />
+          <Route path="/instances/:instanceId" element={<InstancesPage />} />
+          <Route path="/tests" element={<TestsPage />} />
+          <Route path="/tests/new" element={<TestBuilderPage />} />
+          <Route path="/tests/:testId" element={<TestBuilderPage />} />
           <Route path="/review" element={<QuestionsPage key="review" />} />
           <Route path="/question-bank" element={<QuestionsPage key="bank" bank />} />
           <Route path="/questions/:questionId" element={<QuestionDetailPage />} />

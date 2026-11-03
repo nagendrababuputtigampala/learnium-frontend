@@ -19,7 +19,8 @@ const mockUseAuth = vi.mocked(useAuth)
 const COMMON_LABELS = [
   'Home',
   'Materials',
-  'Tests',
+  'My Tests',
+  'Instances',
   'Question Bank',
   'Batches',
   'Marking',
@@ -85,7 +86,7 @@ describe('Sidebar', () => {
   it('does not mark other items as active at the root route', () => {
     mockUseAuth.mockReturnValue(authContextValue({ user: teacherUser }))
     renderSidebar('/')
-    const tests = screen.getByRole('link', { name: 'Tests' })
+    const tests = screen.getByRole('link', { name: 'My Tests' })
     expect(tests).not.toHaveAttribute('aria-current')
     expect(tests).not.toHaveClass('bg-indigo-primary')
   })
