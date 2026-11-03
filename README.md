@@ -72,3 +72,23 @@ VITE_API_PROXY_TARGET=http://localhost:8081 npm run dev -- --port 5174
 
 The default proxy remains `http://localhost:8080`. The backend's
 `docs/m4-review-api.md` and `docs/m4-requirements.md` describe the API and settled M4 policies.
+
+## M4 definitions and publishing
+
+Use **My Tests** to create a scored test or an unscored flashcard practice set from the
+approved bank. The selected grade/subject locks the bank filter; saved items keep their
+order and decimal marks. Published definitions remain editable, and their Delete control
+explains why an already published definition cannot be removed.
+
+**Publish saved definition** opens a final review. Its question/order/mark changes affect
+only that publish. Select a managed batch, an opening/closing window (labelled with the
+browser timezone), optional time limit and attempt/release/integrity/camera settings.
+A successful publish shows a copyable join code and an instance link.
+
+**Instances** shows currently manageable batches, derived statuses, windows and codes.
+Code regeneration and early close require confirmation. Instance details show frozen
+questions and assigned students; eligible late joiners come from the current active
+batch roster and cannot be added after closing.
+
+The marking engine is backend-only in M4. The student player, marking queue, reports,
+submission trigger and camera/integrity capture remain later work.

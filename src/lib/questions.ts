@@ -25,6 +25,7 @@ export interface Question extends Omit<GeneratedQuestionDto, 'type' | 'provider'
 export type QuestionSummary = Pick<Question, 'questionId' | 'type' | 'status' | 'gradeSubjectId' | 'gradeName' | 'subjectName' | 'topicId' | 'topicName' | 'difficulty' | 'materialId' | 'materialTitle' | 'createdBy' | 'createdAt' | 'approvedBy' | 'approvedAt'> & { stemPreview: string }
 
 export interface QuestionFilters {
+  gradeSubjectId?: string
   status: Question['status']
   gradeId: string
   subjectId: string

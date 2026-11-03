@@ -1,3 +1,26 @@
+# Progress — feature/publish (M4 branch 2)
+
+## S1 — definition, publish and instance UI (2026-11-02)
+
+- Updated feature/publish to the latest merged branch-1 frontend dev before editing.
+- Added My Tests, grade/subject-locked compatible bank selection, ordered decimal-mark
+  builder, save/delete controls and published-definition deletion explanations.
+- Added independent final publish review, managed-batch selection, browser timezone
+  labels, open/close window, optional minutes limit, retakes/release/integrity/camera
+  settings, join-code copying and instance navigation.
+- Added manageable instance lists/filtering, frozen-question/student details, active
+  unassigned late-joiner selection and confirmable code regeneration/early close.
+- Existing session/centre query scoping, shared API client and route guards are reused.
+  No student player, marking queue UI or capture features were introduced.
+- Form handlers independently reject invalid and duplicate implicit submissions while save
+  or publish requests are pending; disabled controls are not the only safety boundary.
+- Final production build and all 412 tests across 34 files passed. Coverage gates remain
+  100% statements (1314/1314), branches (980/980), functions (491/491), lines (1166/1166).
+- Lint passed with the same seven pre-existing warnings. Fresh production-container
+  acceptance passed migrations, nginx routing, authenticated M2 onboarding, M4 review/bank
+  and the complete publish/instance lifecycle.
+- Next: none on this branch — frontend branch 2 is ready for review.
+
 ## Invalid-draft resilience and final validation (2026-11-02)
 
 - Malformed rubric entries and missing MCQ options can be opened and rejected without
