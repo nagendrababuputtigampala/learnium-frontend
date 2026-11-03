@@ -1,20 +1,25 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   adminUser,
   authContextValue,
   teacherUser,
 } from '../../test/fixtures'
 import { useAuth } from '../../lib/auth'
+import { useMarkingQueue } from '../../lib/marking'
 import Sidebar from './Sidebar'
 
 vi.mock('../../lib/auth', () => ({
   useAuth: vi.fn(),
 }))
+vi.mock('../../lib/marking', () => ({ useMarkingQueue: vi.fn() }))
 
 const mockUseAuth = vi.mocked(useAuth)
+const mockUseMarkingQueue = vi.mocked(useMarkingQueue)
+
+beforeEach(() => mockUseMarkingQueue.mockReturnValue({ data: [] } as never))
 
 const COMMON_LABELS = [
   'Home',
@@ -114,5 +119,15 @@ describe('Sidebar', () => {
     renderSidebar()
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the total number of answers awaiting marking', () => {
+    mockUseAuth.mockReturnValue(authContextValue({ user: teacherUser }))
+    mockUseMarkingQueue.mockReturnValue({ data: [
+      { instanceId: 'one', testName: 'One', batchName: 'A', items: [{}, {}] },
+      { instanceId: 'two', testName: 'Two', batchName: 'B', items: [{}] },
+    ] } as never)
+    renderSidebar()
+    expect(screen.getByLabelText('3 answers awaiting marking')).toHaveTextContent('3')
   })
 })

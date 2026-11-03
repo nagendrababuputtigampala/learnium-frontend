@@ -1,5 +1,18 @@
 # Progress — feature/student-flow (M5)
 
+## Part 3 — marking queue and confirmation (2026-11-03)
+
+- Added the staff marking queue grouped by published instance, with the teacher-nav
+  pending badge and READY, MARKING, FAILED and manual-marking states.
+- Added frozen question/answer review, AI criterion prefill, editable criterion marks,
+  live half-up rescaling, feedback and final confirmation. Failed AI jobs can be rerun;
+  answers without a suggestion open with intentionally blank manual inputs.
+- Full verification: 426 tests across 39 files pass. Coverage is 100% statements
+  (1484/1484), branches (1219/1219), functions (570/570) and lines (1209/1209).
+  Lint and the production build pass; only the seven previously documented compiler
+  hints and the existing bundle-size warning remain.
+- Part 3 is complete and committed before Part 4; no dashboard UI has started.
+
 ## Checkpoint B — student player, results and practice (2026-11-03)
 
 - Added the student test player with start/resume, one-question navigation, answered-state

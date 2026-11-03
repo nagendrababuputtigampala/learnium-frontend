@@ -142,6 +142,50 @@ export interface AttemptResult {
 }
 export interface Practice { instanceId: string; definitionName: string; cards: AttemptItem[] }
 
+export type MarkingSuggestionState = 'READY' | 'MARKING' | 'FAILED' | 'NONE'
+export interface MarkingQueueItem {
+  questionAttemptId: string
+  studentId: string
+  studentName: string
+  testName: string
+  submittedAt: string
+  marks: number
+  suggestionState: MarkingSuggestionState
+}
+export interface MarkingQueueGroup {
+  instanceId: string
+  testName: string
+  batchName: string
+  items: MarkingQueueItem[]
+}
+export interface MarkingCriterion {
+  id: string
+  criterion: string
+  maxScore: number
+}
+export interface MarkingDetail {
+  questionAttemptId: string
+  instanceId: string
+  testName: string
+  batchName: string
+  studentId: string
+  studentName: string
+  submittedAt: string
+  marks: number
+  payload: Record<string, unknown>
+  answer: Record<string, unknown>
+  aiBreakdown: unknown | null
+  aiFeedback: string | null
+  suggestionState: MarkingSuggestionState
+  confirmedBreakdown: unknown | null
+  confirmedScore: number | null
+  markerFeedback: string | null
+}
+export interface MarkingConfirmRequest {
+  criteria: { criterionId: string; score: number }[]
+  feedback: string
+}
+
 export type MaterialSourceType = 'PDF' | 'TEXT'
 
 export type ExtractionStatus =

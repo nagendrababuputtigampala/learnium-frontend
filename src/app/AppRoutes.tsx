@@ -21,6 +21,8 @@ import StudentPlayerPage from '../pages/StudentPlayerPage'
 import StudentResultPage from '../pages/StudentResultPage'
 import PracticePlayerPage from '../pages/PracticePlayerPage'
 import TeachersPage from '../pages/TeachersPage'
+import MarkingQueuePage from '../pages/MarkingQueuePage'
+import MarkingDetailPage from '../pages/MarkingDetailPage'
 
 export default function AppRoutes() {
   return (
@@ -49,6 +51,8 @@ export default function AppRoutes() {
           <Route path="/question-bank" element={<QuestionsPage key="bank" bank />} />
           <Route path="/questions/:questionId" element={<QuestionDetailPage />} />
           <Route path="/materials" element={<MaterialsPage />} />
+          <Route path="/marking" element={<MarkingQueuePage />} />
+          <Route path="/marking/:questionAttemptId" element={<MarkingDetailPage />} />
           <Route
             path="/materials/:materialId"
             element={<MaterialDetailPage />}
