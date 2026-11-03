@@ -272,6 +272,7 @@ describe('publishing failures and in-flight state', () => {
     mock.put.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
     const user = userEvent.setup(); start('/tests/t1'); await user.click(await screen.findByText('Save definition'))
     expect(screen.getByText('Save definition')).toBeDisabled(); expect(screen.getByText('Delete definition')).toBeDisabled()
+    fireEvent.submit(screen.getByText('Save definition').closest('form')!); expect(mock.put).toHaveBeenCalledTimes(1)
     finish({ data: definitions[0] }); expect(await screen.findByRole('heading', { name: 'My Tests' })).toBeTruthy()
   })
   it('closes a failed final-review load without changing a definition', async () => {
@@ -348,5 +349,27 @@ describe('publishing boundaries', () => {
     start('/tests/t1')
     expect(await screen.findByText('Selected questions (200)')).toBeTruthy()
     expect(await screen.findByRole('button', { name: 'Add question: Which fraction?' })).toBeDisabled()
+  })
+})
+
+
+describe('implicit form submission guards', () => {
+  it('does not send an invalid definition through an implicit submit', () => {
+    start('/tests/new'); fireEvent.submit(screen.getByText('Save definition').closest('form')!)
+    expect(mock.post).not.toHaveBeenCalled()
+  })
+  it('does not convert or send an invalid publish window through an implicit submit', async () => {
+    const user = userEvent.setup(); start(); await user.click(await screen.findByText('Publish test')); await screen.findByText('Publish Fractions check')
+    fireEvent.submit(screen.getByText('Publish now').closest('form')!); expect(mock.post).not.toHaveBeenCalled()
+  })
+  it('does not send a second publish while a valid request is pending', async () => {
+    let finish!: (result: { data: Instance }) => void
+    mock.post.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const user = userEvent.setup(); start(); await user.click(await screen.findByText('Publish test')); await screen.findByText('Publish Fractions check')
+    await user.selectOptions(screen.getByLabelText('Batch'), 'b1')
+    fireEvent.change(screen.getByLabelText('Opens at'), { target: { value: '2026-11-10T10:00' } }); fireEvent.change(screen.getByLabelText('Closes at'), { target: { value: '2026-11-10T11:00' } })
+    await user.click(screen.getByText('Publish now')); expect(screen.getByText('Publish now')).toBeDisabled()
+    fireEvent.submit(screen.getByText('Publish now').closest('form')!); expect(mock.post).toHaveBeenCalledTimes(1)
+    finish({ data: instance({ id: 'published' }) }); expect(await screen.findByText('Test published')).toBeTruthy()
   })
 })

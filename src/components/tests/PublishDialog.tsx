@@ -22,6 +22,7 @@ function PublishForm({ definition, onClose }: { definition: Definition; onClose:
   const invalid = batchId === '' || !windowValid || items.length === 0 || items.some(item => !validMarks(item.marks, definition.kind)) || !validPublishLimits(minutes, attempts)
   const submit = (event: FormEvent) => {
     event.preventDefault()
+    if (invalid || publish.isPending) return
     publish.mutate({ id: definition.id, request: { batchId, opensAt: new Date(opensAt).toISOString(), closesAt: new Date(closesAt).toISOString(),
       ...(minutes === '' ? {} : { timeLimitSeconds: Math.round(Number(minutes) * 60) }), maxAttempts: Number(attempts), answerReleasePolicy: release,
       integrityEnabled: integrity, cameraMode: camera ? 'ON' : 'OFF', items: itemRequest(items) } })

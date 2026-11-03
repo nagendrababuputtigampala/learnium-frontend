@@ -20,7 +20,7 @@ function DefinitionForm({ definition }: { definition?: Definition }) {
   const invalid = name.trim() === '' || gradeSubjectId === '' || items.length === 0 || items.some(item => !validMarks(item.marks, kind))
   const pending = save.isPending || remove.isPending
   return <>
-    <form className="space-y-6" onSubmit={event => { event.preventDefault(); save.mutate({ id: definition?.id ?? '', request: { name: name.trim(), gradeSubjectId, kind, items: itemRequest(items) } }, { onSuccess: () => navigate('/tests') }) }}>
+    <form className="space-y-6" onSubmit={event => { event.preventDefault(); if (invalid || pending) return; save.mutate({ id: definition?.id ?? '', request: { name: name.trim(), gradeSubjectId, kind, items: itemRequest(items) } }, { onSuccess: () => navigate('/tests') }) }}>
       {save.isError && <ApiFailure error={save.error} fallback="Could not save the definition." />}
       {remove.isError && <ApiFailure error={remove.error} fallback="Could not delete the definition." />}
       <div className="grid gap-4 rounded-2xl border border-card-border bg-white p-5 md:grid-cols-3">
