@@ -186,6 +186,43 @@ export interface MarkingConfirmRequest {
   feedback: string
 }
 
+export type TopicBand = 'STRONG' | 'DEVELOPING' | 'FOCUS' | null
+export interface TopicPerformance {
+  topicId: string
+  topicName: string
+  confirmedItemCount: number
+  earnedMarks: number
+  availableMarks: number
+  scorePercent: number
+  band: TopicBand
+}
+export interface DashboardRecentResult {
+  attemptId: string
+  testName: string
+  batchName: string
+  submittedAt: string
+  earnedMarks: number
+  availableMarks: number
+  markingPending: boolean
+}
+export interface BatchComparison {
+  batchId: string
+  batchName: string
+  topicId: string
+  topicName: string
+  studentCount: number
+  batchAveragePercent: number
+  percentile: number
+}
+export interface StudentDashboard {
+  topics: TopicPerformance[]
+  strongAreas: TopicPerformance[]
+  areasToImprove: TopicPerformance[]
+  recentResults: DashboardRecentResult[]
+  comparisons: BatchComparison[]
+  pendingItemCount: number
+}
+
 export type MaterialSourceType = 'PDF' | 'TEXT'
 
 export type ExtractionStatus =

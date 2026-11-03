@@ -1,5 +1,17 @@
 # Progress — feature/student-flow (M5)
 
+## Part 4 — student dashboard (2026-11-03)
+
+- Added the student Dashboard tab with topic progress bars, exact strong/developing/focus
+  chips, insufficient-data treatment and explicit strong/focus guidance.
+- Added aggregate-only batch comparison cards, five recent results, pending-marking state
+  and new-student/loading/error handling in a responsive single-column phone layout.
+- Full verification: 431 tests across 40 files pass. Coverage is 100% statements
+  (1505/1505), branches (1255/1255), functions (580/580) and lines (1225/1225).
+  Lint and the production build pass; only the seven pre-existing compiler hints and the
+  existing bundle-size warning remain.
+- Part 4 is complete and committed before Part 5; no integrity/camera UI has started.
+
 ## Part 3 — marking queue and confirmation (2026-11-03)
 
 - Added the staff marking queue grouped by published instance, with the teacher-nav

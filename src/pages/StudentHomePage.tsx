@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiClient, getApiErrorMessage, type StudentTest, type StudentTestState } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import StudentDashboard from '../components/student/StudentDashboard'
 
 const tabs: { value: StudentTestState; label: string }[] = [
   { value: 'AVAILABLE', label: 'Available' },
@@ -41,6 +42,7 @@ function TestCard({ test }: { test: StudentTest }) {
 export default function StudentHomePage() {
   const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState<StudentTestState>('AVAILABLE')
+  const [section, setSection] = useState<'TESTS' | 'DASHBOARD'>('TESTS')
   const tests = useQuery({
     queryKey: ['student-tests', user?.centreId, user?.userId],
     queryFn: async () => (await apiClient.get<StudentTest[]>('/student/tests')).data,
@@ -57,11 +59,13 @@ export default function StudentHomePage() {
           <button type="button" onClick={() => void logout()} className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25"><LogOut size={16} />Sign out</button>
         </header>
         <main className="mt-8 rounded-3xl bg-paper p-5 shadow-xl md:p-8">
-          <div className="flex items-center gap-3"><span className="rounded-xl bg-marigold p-2"><BookOpen size={22} /></span><h2 className="font-display text-2xl font-bold">Tests</h2></div>
+          <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="rounded-xl bg-marigold p-2"><BookOpen size={22} /></span><h2 className="font-display text-2xl font-bold">{section === 'TESTS' ? 'Tests' : 'Dashboard'}</h2></div><div role="tablist" aria-label="Student sections" className="flex rounded-full bg-indigo-tint p-1"><button role="tab" aria-selected={section === 'TESTS'} onClick={() => setSection('TESTS')} className={`rounded-full px-4 py-2 text-sm font-bold ${section === 'TESTS' ? 'bg-indigo-primary text-white' : 'text-indigo-primary'}`}>Tests</button><button role="tab" aria-selected={section === 'DASHBOARD'} onClick={() => setSection('DASHBOARD')} className={`rounded-full px-4 py-2 text-sm font-bold ${section === 'DASHBOARD' ? 'bg-indigo-primary text-white' : 'text-indigo-primary'}`}>Dashboard</button></div></div>
+          {section === 'DASHBOARD' ? <StudentDashboard /> : <>
           <div role="tablist" aria-label="Test status" className="mt-6 flex gap-2 border-b border-card-border">
             {tabs.map((tab) => <button key={tab.value} role="tab" aria-selected={activeTab === tab.value} onClick={() => setActiveTab(tab.value)} className={`border-b-2 px-4 py-3 text-sm font-bold ${activeTab === tab.value ? 'border-indigo-primary text-indigo-primary' : 'border-transparent text-ink/55'}`}>{tab.label} ({allTests.filter((test) => test.state === tab.value).length})</button>)}
           </div>
           {tests.isPending ? <p className="py-10 text-center text-ink/60">Loading your tests…</p> : tests.isError ? <p role="alert" className="mt-5 rounded-xl bg-rose-weak/10 p-4 text-rose-weak">{getApiErrorMessage(tests.error, 'Could not load your tests.')}</p> : visible.length === 0 ? <p className="py-12 text-center text-ink/55">No {activeTab.toLowerCase()} tests right now.</p> : <div className="mt-5 grid gap-4 md:grid-cols-2">{visible.map((test) => <TestCard key={test.instanceId} test={test} />)}</div>}
+          </>}
         </main>
       </div>
     </div>

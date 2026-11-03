@@ -55,6 +55,15 @@ describe('StudentHomePage', () => {
     expect(mocks.logout).toHaveBeenCalled()
   })
 
+  it('opens the dashboard tab and loads progress independently', async () => {
+    mocks.get.mockImplementation((url: string) => Promise.resolve({ data: url === '/student/tests' ? [] : { topics: [], strongAreas: [], areasToImprove: [], recentResults: [], comparisons: [], pendingItemCount: 0 } }))
+    const user = userEvent.setup(); renderPage(); await screen.findByText('No available tests right now.')
+    await user.click(screen.getByRole('tab', { name: 'Dashboard' }))
+    expect(await screen.findByRole('heading', { name: 'Your progress will appear here' })).toBeInTheDocument()
+    expect(mocks.get).toHaveBeenCalledWith('/student/dashboard')
+    await user.click(screen.getByRole('tab', { name: 'Tests' })); expect(screen.getByText('No available tests right now.')).toBeInTheDocument()
+  })
+
   it.each([
     [{ ...tests[0], latestAttemptStatus: null }, 'Start test', '/student/tests/a'],
     [tests[0], 'Resume test', '/student/tests/a'],
