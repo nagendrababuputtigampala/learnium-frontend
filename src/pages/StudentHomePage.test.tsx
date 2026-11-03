@@ -17,9 +17,9 @@ function renderPage() {
 }
 
 const tests = [
-  { instanceId: 'a', definitionName: 'Fractions Sprint', kind: 'SCORED_TEST', batchName: 'Grade 8 Math', opensAt: '2026-11-01T00:00:00Z', closesAt: '2026-11-10T00:00:00Z', maxAttempts: 2, attemptsUsed: 1, latestAttemptId: 'attempt-a', latestAttemptStatus: 'IN_PROGRESS', state: 'AVAILABLE', totalSoFar: null, markingPending: false },
-  { instanceId: 'b', definitionName: 'Algebra Check', kind: 'SCORED_TEST', batchName: 'Grade 8 Math', opensAt: '2026-12-01T00:00:00Z', closesAt: '2026-12-10T00:00:00Z', maxAttempts: 1, attemptsUsed: 0, latestAttemptId: null, latestAttemptStatus: null, state: 'UPCOMING', totalSoFar: null, markingPending: false },
-  { instanceId: 'c', definitionName: 'Geometry Review', kind: 'SCORED_TEST', batchName: 'Grade 8 Math', opensAt: '2026-10-01T00:00:00Z', closesAt: '2026-10-10T00:00:00Z', maxAttempts: 1, attemptsUsed: 1, latestAttemptId: 'attempt-c', latestAttemptStatus: 'SUBMITTED', state: 'COMPLETED', totalSoFar: 8, markingPending: true },
+  { instanceId: 'a', definitionName: 'Fractions Sprint', kind: 'SCORED_TEST', batchName: 'Grade 8 Math', opensAt: '2026-11-01T00:00:00Z', closesAt: '2026-11-10T00:00:00Z', maxAttempts: 2, attemptsUsed: 1, latestAttemptId: 'attempt-a', latestAttemptStatus: 'IN_PROGRESS', state: 'AVAILABLE', totalSoFar: null, markingPending: false, integritySignalsOn: false, cameraMode: 'OFF' },
+  { instanceId: 'b', definitionName: 'Algebra Check', kind: 'SCORED_TEST', batchName: 'Grade 8 Math', opensAt: '2026-12-01T00:00:00Z', closesAt: '2026-12-10T00:00:00Z', maxAttempts: 1, attemptsUsed: 0, latestAttemptId: null, latestAttemptStatus: null, state: 'UPCOMING', totalSoFar: null, markingPending: false, integritySignalsOn: false, cameraMode: 'OFF' },
+  { instanceId: 'c', definitionName: 'Geometry Review', kind: 'SCORED_TEST', batchName: 'Grade 8 Math', opensAt: '2026-10-01T00:00:00Z', closesAt: '2026-10-10T00:00:00Z', maxAttempts: 1, attemptsUsed: 1, latestAttemptId: 'attempt-c', latestAttemptStatus: 'SUBMITTED', state: 'COMPLETED', totalSoFar: 8, markingPending: true, integritySignalsOn: true, cameraMode: 'ON' },
 ]
 
 beforeEach(() => { mocks.get.mockReset(); mocks.logout.mockReset() })
