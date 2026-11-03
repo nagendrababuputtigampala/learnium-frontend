@@ -84,14 +84,14 @@ function renderAt(path: string) {
 describe('AppRoutes', () => {
   it('shows the login page without the app layout at /login', () => {
     renderAt('/login')
-    expect(screen.getByLabelText('Email')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email or student username')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Batches' })).toBeNull()
   })
 
   it('redirects the root route to /login when signed out', async () => {
     renderAt('/')
-    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Email or student username')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Batches' })).toBeNull()
   })
 
@@ -171,7 +171,7 @@ describe('AppRoutes', () => {
 
   it('redirects /materials to /login when signed out', async () => {
     renderAt('/materials')
-    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Email or student username')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Materials' })).toBeNull()
   })
 
@@ -185,7 +185,7 @@ describe('AppRoutes', () => {
 
   it('redirects a material detail to /login when signed out', async () => {
     renderAt('/materials/mat-1')
-    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Email or student username')).toBeInTheDocument()
   })
 
   it('shows the Teachers page for an admin', async () => {
@@ -212,18 +212,14 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows the student join page without the app layout', async () => {
+  it('redirects legacy join links to login', async () => {
     renderAt('/join')
-    expect(
-      await screen.findByRole('heading', { name: 'Join your test' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByLabelText('Email or student username')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Batches' })).toBeNull()
   })
 
-  it('sends /student visitors without a student session to /join', async () => {
+  it('sends signed-out student visitors to login', async () => {
     renderAt('/student')
-    expect(
-      await screen.findByRole('heading', { name: 'Join your test' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByLabelText('Email or student username')).toBeInTheDocument()
   })
 })

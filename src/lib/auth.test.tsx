@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   adminUser,
   loginResponseFor,
-  studentProfile,
   teacherUser,
 } from '../test/fixtures'
 import { LocationProbe, renderWithProviders } from '../test/renderWithProviders'
@@ -13,7 +12,6 @@ import {
   advanceSessionGeneration,
   getAccessToken,
   getApiErrorMessage,
-  getStudent,
   StaleSessionError,
   type AuthUser,
 } from './api'
@@ -62,18 +60,6 @@ function Probe() {
         }}
       >
         Log out
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          auth
-            .studentSession('batch-1', 'Simran', '1234')
-            .catch((error: unknown) => {
-              setActionError(getApiErrorMessage(error, 'Join failed'))
-            })
-        }}
-      >
-        Join as student
       </button>
       <LocationProbe />
     </div>
@@ -374,31 +360,6 @@ describe('AuthProvider actions', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/login')
   })
 
-  it('studentSession stores the student session in sessionStorage', async () => {
-    const user = userEvent.setup()
-    mock.post.mockResolvedValue({
-      data: {
-        accessToken: 'student-token',
-        tokenType: 'Bearer',
-        expiresInSeconds: 43200,
-        student: studentProfile,
-      },
-    })
-    await renderProbe()
-    await user.click(screen.getByRole('button', { name: 'Join as student' }))
-    await waitFor(() =>
-      expect(sessionStorage.getItem('learnium.studentToken')).toBe(
-        'student-token',
-      ),
-    )
-    expect(mock.post).toHaveBeenCalledWith('/auth/student-session', {
-      batchId: 'batch-1',
-      fullName: 'Simran',
-      pin: '1234',
-    })
-    expect(getStudent()).toEqual(studentProfile)
-  })
-
   it('clears the user and navigates to /login when the session expires', async () => {
     const user = userEvent.setup()
     mock.post.mockResolvedValue({ data: loginResponseFor(teacherUser) })
@@ -449,7 +410,7 @@ describe('AuthProvider cache isolation', () => {
     expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
   })
 
-  it('logout clears cached queries and PIN-bearing mutations', async () => {
+  it('logout clears cached queries and mutations', async () => {
     const user = userEvent.setup()
     mockLoginLogout()
     const { queryClient } = await renderProbe()
@@ -502,27 +463,6 @@ describe('AuthProvider cache isolation', () => {
     expect(
       queryClient.getQueryData(['teachers', 'centre-1', 0]),
     ).toBeUndefined()
-    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
-  })
-
-  it('studentSession clears cached staff data', async () => {
-    const user = userEvent.setup()
-    mock.post.mockResolvedValue({
-      data: {
-        accessToken: 'student-token',
-        tokenType: 'Bearer',
-        expiresInSeconds: 43200,
-        student: studentProfile,
-      },
-    })
-    const { queryClient } = await renderProbe()
-    queryClient.setQueryData(['batches', 'centre-1'], ['Centre A batch'])
-    await user.click(screen.getByRole('button', { name: 'Join as student' }))
-    await waitFor(() =>
-      expect(sessionStorage.getItem('learnium.studentToken')).toBe(
-        'student-token',
-      ),
-    )
     expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
   })
 

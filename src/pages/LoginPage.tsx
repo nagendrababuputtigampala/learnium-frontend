@@ -9,7 +9,7 @@ import { getApiErrorMessage } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
 const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
+  email: z.string().trim().min(1, 'Enter your email or student username'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
     setErrorMessage(null)
     try {
       const user = await login(values.email, values.password)
-      navigate(user.role === 'CENTRE_ADMIN' ? '/admin' : '/', {
+      navigate(user.role === 'STUDENT' ? '/student' : user.role === 'CENTRE_ADMIN' ? '/admin' : '/', {
         replace: true,
       })
     } catch (error) {
@@ -73,12 +73,12 @@ export default function LoginPage() {
           )}
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium">
-              Email
+              Email or student username
             </label>
             <input
               id="email"
-              type="email"
-              autoComplete="email"
+              type="text"
+              autoComplete="username"
               className={inputClassName}
               {...register('email')}
             />
@@ -120,12 +120,6 @@ export default function LoginPage() {
             className="font-medium text-indigo-primary hover:underline"
           >
             Forgot your password?
-          </Link>
-          <Link
-            to="/join"
-            className="font-medium text-indigo-primary hover:underline"
-          >
-            Joining a test as a student?
           </Link>
         </div>
       </div>

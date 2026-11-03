@@ -17,6 +17,24 @@ export function ProtectedRoute() {
   return <Outlet />
 }
 
+/** Keeps student accounts out of staff navigation and tools. */
+export function StaffRoute() {
+  const { user } = useAuth()
+  if (user?.role === 'STUDENT') return <Navigate to="/student" replace />
+  return <Outlet />
+}
+
+/** Allows only a restored student account onto student surfaces. */
+export function StudentRoute() {
+  const { user, isRestoring } = useAuth()
+  if (isRestoring) {
+    return <p className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink/60">Loading…</p>
+  }
+  if (user === null) return <Navigate to="/login" replace />
+  if (user.role !== 'STUDENT') return <Navigate to="/" replace />
+  return <Outlet />
+}
+
 /** Blocks the nested routes unless the user is a centre admin. */
 export function AdminRoute() {
   const { user } = useAuth()

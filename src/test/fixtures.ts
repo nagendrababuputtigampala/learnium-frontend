@@ -11,7 +11,6 @@ import type {
   MaterialDetailDto,
   MaterialDto,
   RosterStudent,
-  StudentProfile,
   TeacherDto,
   Topic,
 } from '../lib/api'
@@ -26,7 +25,6 @@ export function authContextValue(
     isRestoring: false,
     login: vi.fn(),
     logout: vi.fn(),
-    studentSession: vi.fn(),
     restore: vi.fn(),
     ...overrides,
   }
@@ -38,8 +36,10 @@ export const adminUser: AuthUser = {
   userId: 'user-admin',
   displayName: 'Ada Admin',
   email: 'ada@learnium.test',
+  username: null,
   role: 'CENTRE_ADMIN',
   centreId: 'centre-1',
+  centreCode: 'dtc',
   centreName: 'Demo Tutoring Centre',
 }
 
@@ -47,8 +47,10 @@ export const teacherUser: AuthUser = {
   userId: 'user-teacher',
   displayName: 'Mrs. Patel',
   email: 'patel@learnium.test',
+  username: null,
   role: 'TEACHER',
   centreId: 'centre-1',
+  centreCode: 'dtc',
   centreName: 'Demo Tutoring Centre',
 }
 
@@ -62,13 +64,15 @@ export function loginResponseFor(user: AuthUser): LoginResponse {
   }
 }
 
-export const studentProfile: StudentProfile = {
+export const studentUser: AuthUser = {
   userId: 'user-student',
   displayName: 'Simran',
-  membershipId: 'membership-1',
-  batchId: 'batch-1',
-  batchName: 'Grade 8 Math — Batch B',
+  email: 'parent@example.test',
+  username: 'simran',
+  role: 'STUDENT',
   centreId: 'centre-1',
+  centreCode: 'dtc',
+  centreName: 'Demo Tutoring Centre',
 }
 
 export const teacherOne: TeacherDto = {
@@ -142,25 +146,31 @@ export const gradeSubjects: GradeSubject[] = [
 export const rosterStudentActive: RosterStudent = {
   membershipId: 'membership-1',
   userId: 'user-student',
-  fullName: 'Simran',
+  displayName: 'Simran',
+  username: 'simran',
+  contactEmail: 'parent@example.test',
   status: 'ACTIVE',
-  pinLocked: false,
+  inviteStatus: 'ACCEPTED',
 }
 
 export const rosterStudentLocked: RosterStudent = {
   membershipId: 'membership-2',
   userId: 'user-student-2',
-  fullName: 'Arjun',
+  displayName: 'Arjun',
+  username: 'arjun',
+  contactEmail: null,
   status: 'ACTIVE',
-  pinLocked: true,
+  inviteStatus: 'NOT_SENT',
 }
 
 export const rosterStudentInactive: RosterStudent = {
   membershipId: 'membership-3',
   userId: 'user-student-3',
-  fullName: 'Meera',
+  displayName: 'Meera',
+  username: 'meera',
+  contactEmail: 'family@example.test',
   status: 'INACTIVE',
-  pinLocked: false,
+  inviteStatus: 'PENDING',
 }
 
 export const materialOk: MaterialDto = {
@@ -257,6 +267,7 @@ export const materialDetailLegacy: MaterialDetailDto = {
 export const centreDto: CentreDto = {
   centreId: 'centre-1',
   name: 'Demo Tutoring Centre',
+  code: 'dtc',
   logoUrl: 'https://example.test/logo.png',
   contactEmail: 'hello@demo.test',
 }

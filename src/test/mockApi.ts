@@ -21,7 +21,7 @@ import type { Mock } from 'vitest'
  *
  * HTTP verbs and the refresh function are plain `vi.fn()`s the test
  * drives; token storage mirrors the real module (in-memory access
- * token, localStorage refresh token, sessionStorage student session).
+ * token and localStorage refresh token).
  */
 
 export interface MockHandles {
@@ -53,8 +53,6 @@ export function createMockApiModule(handles: MockHandles) {
   return {
     API_BASE_URL: '/api/v1',
     REFRESH_TOKEN_KEY: 'learnium.refreshToken',
-    STUDENT_TOKEN_KEY: 'learnium.studentToken',
-    STUDENT_KEY: 'learnium.student',
     createApiClient: () => http,
     apiClient: http,
     getAccessToken: () => accessToken,
@@ -80,24 +78,6 @@ export function createMockApiModule(handles: MockHandles) {
     getSessionGeneration: () => sessionGeneration,
     advanceSessionGeneration: () => {
       sessionGeneration += 1
-    },
-    saveStudentSession: (session: {
-      accessToken: string
-      student: unknown
-    }) => {
-      sessionStorage.setItem('learnium.studentToken', session.accessToken)
-      sessionStorage.setItem(
-        'learnium.student',
-        JSON.stringify(session.student),
-      )
-    },
-    getStudent: () => {
-      const raw = sessionStorage.getItem('learnium.student')
-      return raw === null ? null : JSON.parse(raw)
-    },
-    clearStudentSession: () => {
-      sessionStorage.removeItem('learnium.studentToken')
-      sessionStorage.removeItem('learnium.student')
     },
     setSessionExpiredHandler: (handler: (() => void) | null) => {
       handles.sessionExpired.handler = handler

@@ -15,14 +15,16 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '/api/v
 /* API contract types                                                  */
 /* ------------------------------------------------------------------ */
 
-export type Role = 'CENTRE_ADMIN' | 'TEACHER'
+export type Role = 'CENTRE_ADMIN' | 'TEACHER' | 'STUDENT'
 
 export interface AuthUser {
   userId: string
   displayName: string
-  email: string
+  email: string | null
+  username: string | null
   role: Role
   centreId: string
+  centreCode: string
   centreName: string
 }
 
@@ -32,22 +34,6 @@ export interface LoginResponse {
   tokenType: string
   expiresInSeconds: number
   user: AuthUser
-}
-
-export interface StudentProfile {
-  userId: string
-  displayName: string
-  membershipId: string
-  batchId: string
-  batchName: string
-  centreId: string
-}
-
-export interface StudentSessionResponse {
-  accessToken: string
-  tokenType: string
-  expiresInSeconds: number
-  student: StudentProfile
 }
 
 export interface PageResponse<T> {
@@ -91,23 +77,150 @@ export interface GradeSubject {
 export interface RosterStudent {
   membershipId: string
   userId: string
-  fullName: string
+  displayName: string
+  username: string
+  contactEmail: string | null
   status: string
-  pinLocked: boolean
+  inviteStatus: 'NOT_SENT' | 'PENDING' | 'ACCEPTED'
 }
 
 export interface CreatedStudent {
   membershipId: string
   userId: string
-  fullName: string
-  pin: string
+  displayName: string
+  username: string
+  inviteStatus: 'NOT_SENT' | 'SENT' | 'PENDING' | 'ACCEPTED'
 }
 
 export interface CentreDto {
   centreId: string
   name: string
+  code: string
   logoUrl: string
   contactEmail: string
+}
+
+export interface StudentLookup {
+  id: string
+  displayName: string
+  username: string
+}
+
+export type StudentTestState = 'AVAILABLE' | 'UPCOMING' | 'COMPLETED'
+
+export interface StudentTest {
+  instanceId: string
+  definitionName: string
+  kind: string
+  batchName: string
+  opensAt: string
+  closesAt: string
+  maxAttempts: number
+  attemptsUsed: number
+  latestAttemptId: string | null
+  latestAttemptStatus: string | null
+  state: StudentTestState
+  totalSoFar: number | null
+  markingPending: boolean
+}
+
+export type AttemptStatus = 'IN_PROGRESS' | 'SUBMITTED' | 'AUTO_SUBMITTED' | 'INVALIDATED'
+export interface AttemptItem { itemId: string; order: number; type: QuestionTypeCode; marks: number; payload: Record<string, unknown> }
+export interface SavedAnswer { itemId: string; answer: Record<string, unknown>; savedAt: string }
+export interface StudentAttempt {
+  attemptId: string; instanceId: string; definitionName: string; attemptNo: number; status: AttemptStatus
+  startedAt: string; deadlineAt: string; remainingSeconds: number; items: AttemptItem[]; answers: SavedAnswer[]
+}
+export type ResultItemState = 'CORRECT' | 'INCORRECT' | 'PENDING_MARKING' | 'CONFIRMED'
+export interface AttemptResultItem extends AttemptItem {
+  answer: Record<string, unknown> | null; state: ResultItemState; score: number
+  solution: Record<string, unknown> | null; feedback: string | null
+}
+export interface AttemptResult {
+  attemptId: string; status: AttemptStatus; submittedAt: string; score: number; maximumScore: number
+  markingPending: boolean; answersReleased: boolean; items: AttemptResultItem[]
+}
+export interface Practice { instanceId: string; definitionName: string; cards: AttemptItem[] }
+
+export type MarkingSuggestionState = 'READY' | 'MARKING' | 'FAILED' | 'NONE'
+export interface MarkingQueueItem {
+  questionAttemptId: string
+  studentId: string
+  studentName: string
+  testName: string
+  submittedAt: string
+  marks: number
+  suggestionState: MarkingSuggestionState
+}
+export interface MarkingQueueGroup {
+  instanceId: string
+  testName: string
+  batchName: string
+  items: MarkingQueueItem[]
+}
+export interface MarkingCriterion {
+  id: string
+  criterion: string
+  maxScore: number
+}
+export interface MarkingDetail {
+  questionAttemptId: string
+  instanceId: string
+  testName: string
+  batchName: string
+  studentId: string
+  studentName: string
+  submittedAt: string
+  marks: number
+  payload: Record<string, unknown>
+  answer: Record<string, unknown>
+  aiBreakdown: unknown | null
+  aiFeedback: string | null
+  suggestionState: MarkingSuggestionState
+  confirmedBreakdown: unknown | null
+  confirmedScore: number | null
+  markerFeedback: string | null
+}
+export interface MarkingConfirmRequest {
+  criteria: { criterionId: string; score: number }[]
+  feedback: string
+}
+
+export type TopicBand = 'STRONG' | 'DEVELOPING' | 'FOCUS' | null
+export interface TopicPerformance {
+  topicId: string
+  topicName: string
+  confirmedItemCount: number
+  earnedMarks: number
+  availableMarks: number
+  scorePercent: number
+  band: TopicBand
+}
+export interface DashboardRecentResult {
+  attemptId: string
+  testName: string
+  batchName: string
+  submittedAt: string
+  earnedMarks: number
+  availableMarks: number
+  markingPending: boolean
+}
+export interface BatchComparison {
+  batchId: string
+  batchName: string
+  topicId: string
+  topicName: string
+  studentCount: number
+  batchAveragePercent: number
+  percentile: number
+}
+export interface StudentDashboard {
+  topics: TopicPerformance[]
+  strongAreas: TopicPerformance[]
+  areasToImprove: TopicPerformance[]
+  recentResults: DashboardRecentResult[]
+  comparisons: BatchComparison[]
+  pendingItemCount: number
 }
 
 export type MaterialSourceType = 'PDF' | 'TEXT'
@@ -255,8 +368,6 @@ export interface ApiErrorBody {
 /* ------------------------------------------------------------------ */
 
 export const REFRESH_TOKEN_KEY = 'learnium.refreshToken'
-export const STUDENT_TOKEN_KEY = 'learnium.studentToken'
-export const STUDENT_KEY = 'learnium.student'
 
 let accessToken: string | null = null
 
@@ -285,22 +396,6 @@ export function clearTokens(): void {
   accessToken = null
   setRefreshToken(null)
   advanceSessionGeneration()
-}
-
-/** Persists a student join session (token + profile) in sessionStorage. */
-export function saveStudentSession(session: StudentSessionResponse): void {
-  sessionStorage.setItem(STUDENT_TOKEN_KEY, session.accessToken)
-  sessionStorage.setItem(STUDENT_KEY, JSON.stringify(session.student))
-}
-
-export function getStudent(): StudentProfile | null {
-  const raw = sessionStorage.getItem(STUDENT_KEY)
-  return raw === null ? null : (JSON.parse(raw) as StudentProfile)
-}
-
-export function clearStudentSession(): void {
-  sessionStorage.removeItem(STUDENT_TOKEN_KEY)
-  sessionStorage.removeItem(STUDENT_KEY)
 }
 
 /* ------------------------------------------------------------------ */
@@ -427,7 +522,7 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean
 }
 
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh', '/auth/student-session']
+const NO_REFRESH_PATHS = ['/auth/login', '/auth/refresh']
 
 function isNoRefreshPath(url: string | undefined): boolean {
   return url !== undefined && NO_REFRESH_PATHS.some((path) => url.includes(path))

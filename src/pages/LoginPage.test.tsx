@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   adminUser,
   loginResponseFor,
+  studentUser,
   teacherUser,
 } from '../test/fixtures'
 import { LocationProbe, renderWithProviders } from '../test/renderWithProviders'
@@ -66,7 +67,7 @@ describe('LoginPage', () => {
     expect(
       screen.getByRole('heading', { name: /Sign in to Learn/ }),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText('Email')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email or student username')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Sign in' }),
@@ -74,27 +75,24 @@ describe('LoginPage', () => {
     expect(
       screen.getByRole('link', { name: 'Forgot your password?' }),
     ).toHaveAttribute('href', '/forgot-password')
-    expect(
-      screen.getByRole('link', { name: 'Joining a test as a student?' }),
-    ).toHaveAttribute('href', '/join')
+    expect(screen.queryByRole('link', { name: /Joining a test/ })).toBeNull()
   })
 
   it('accepts typed credentials', async () => {
     const user = userEvent.setup()
     renderLogin()
-    await user.type(screen.getByLabelText('Email'), 'teacher@learnium.test')
+    await user.type(screen.getByLabelText('Email or student username'), 'teacher@learnium.test')
     await user.type(screen.getByLabelText('Password'), 'secret123')
-    expect(screen.getByLabelText('Email')).toHaveValue('teacher@learnium.test')
+    expect(screen.getByLabelText('Email or student username')).toHaveValue('teacher@learnium.test')
     expect(screen.getByLabelText('Password')).toHaveValue('secret123')
   })
 
   it('shows validation messages and does not submit invalid input', async () => {
     const user = userEvent.setup()
     renderLogin()
-    await user.type(screen.getByLabelText('Email'), 'not-an-email')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(
-      await screen.findByText('Enter a valid email address'),
+      await screen.findByText('Enter your email or student username'),
     ).toBeInTheDocument()
     expect(
       screen.getByText('Password is required'),
@@ -106,7 +104,7 @@ describe('LoginPage', () => {
     const user = userEvent.setup()
     mock.post.mockResolvedValue({ data: loginResponseFor(teacherUser) })
     renderLogin()
-    await user.type(screen.getByLabelText('Email'), 'patel@learnium.test')
+    await user.type(screen.getByLabelText('Email or student username'), 'patel@learnium.test')
     await user.type(screen.getByLabelText('Password'), 'secret123')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() =>
@@ -122,12 +120,22 @@ describe('LoginPage', () => {
     const user = userEvent.setup()
     mock.post.mockResolvedValue({ data: loginResponseFor(adminUser) })
     renderLogin()
-    await user.type(screen.getByLabelText('Email'), 'ada@learnium.test')
+    await user.type(screen.getByLabelText('Email or student username'), 'ada@learnium.test')
     await user.type(screen.getByLabelText('Password'), 'secret123')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
     await waitFor(() =>
       expect(screen.getByTestId('location')).toHaveTextContent('/admin'),
     )
+  })
+
+  it('signs a student in with username and centre code', async () => {
+    const user = userEvent.setup()
+    mock.post.mockResolvedValue({ data: loginResponseFor(studentUser) })
+    renderLogin()
+    await user.type(screen.getByLabelText('Email or student username'), 'simran@dtc')
+    await user.type(screen.getByLabelText('Password'), 'Demo@123')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/student'))
   })
 
   it('shows the backend envelope message when sign-in fails', async () => {
@@ -136,7 +144,7 @@ describe('LoginPage', () => {
       response: { data: { message: 'Invalid email or password' } },
     })
     renderLogin()
-    await user.type(screen.getByLabelText('Email'), 'patel@learnium.test')
+    await user.type(screen.getByLabelText('Email or student username'), 'patel@learnium.test')
     await user.type(screen.getByLabelText('Password'), 'wrong-password')
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(

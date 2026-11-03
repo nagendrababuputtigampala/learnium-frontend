@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
+import { useMarkingQueue } from '../../lib/marking'
 
 interface NavItem {
   label: string
@@ -25,6 +26,8 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuth()
+  const markingQueue = useMarkingQueue()
+  const markingCount = markingQueue.data?.reduce((total, group) => total + group.items.length, 0) ?? 0
   const visibleItems = NAV_ITEMS.filter(
     (item) => item.adminOnly !== true || user?.role === 'CENTRE_ADMIN',
   )
@@ -52,7 +55,7 @@ export default function Sidebar() {
               }`
             }
           >
-            {item.label}
+            <span className="flex items-center justify-between gap-2">{item.label}{item.to === '/marking' && markingCount > 0 && <span aria-label={`${markingCount} answers awaiting marking`} className="rounded-full bg-marigold px-2 py-0.5 text-xs font-bold text-ink">{markingCount}</span>}</span>
           </NavLink>
         ))}
       </nav>

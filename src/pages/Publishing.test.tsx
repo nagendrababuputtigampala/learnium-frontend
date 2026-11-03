@@ -28,7 +28,7 @@ const allItems: TestItem[] = [
 ]
 const bankRows = allItems.map(item => ({ ...item, stemPreview: String(item.payload.stem ?? item.payload.stemWithBlank ?? item.payload.front), gradeSubjectId: 'gs1', status: 'APPROVED' }))
 const batches = [{ batchId: 'b1', name: 'Batch 8', gradeSubjectId: 'gs1', studentCount: 1 }, { batchId: 'b2', name: 'Batch 9', gradeSubjectId: 'gs2', studentCount: 0 }]
-const roster = [{ userId: 's1', fullName: 'Assigned Student', status: 'ACTIVE' }, { userId: 's2', fullName: 'Late Student', status: 'ACTIVE' }, { userId: 's3', fullName: 'Inactive Student', status: 'INACTIVE' }]
+const roster = [{ userId: 's1', displayName: 'Assigned Student', status: 'ACTIVE' }, { userId: 's2', displayName: 'Late Student', status: 'ACTIVE' }, { userId: 's3', displayName: 'Inactive Student', status: 'INACTIVE' }]
 function definition(kind: TestKind = 'SCORED_TEST', overrides: Partial<Definition> = {}): Definition {
   return { id: 't1', name: 'Fractions check', kind, gradeSubjectId: 'gs1', gradeName: 'Grade 8', subjectName: 'Mathematics', createdBy: 'owner', questionCount: kind === 'SCORED_TEST' ? 2 : 1, totalMarks: kind === 'SCORED_TEST' ? 3.25 : 0, publishedInstanceCount: 0, items: kind === 'SCORED_TEST' ? allItems.slice(0, 2) : [allItems[2]], ...overrides }
 }
@@ -75,7 +75,7 @@ beforeEach(() => {
       return { data: clone(made) }
     }
     const id = url.split('/')[2]; const current = instances.find(i => i.id === id)!
-    const next = url.endsWith('/close') ? { ...current, status: 'CLOSED' as const, closedAt: new Date().toISOString() } : url.endsWith('/regenerate-code') ? { ...current, joinCode: 'NEWCODE8' } : { ...current, students: [...current.students, { userId: request.userId!, name: roster.find(s => s.userId === request.userId)!.fullName, addedBy: 'owner', addedAt: new Date().toISOString() }] }
+    const next = url.endsWith('/close') ? { ...current, status: 'CLOSED' as const, closedAt: new Date().toISOString() } : url.endsWith('/regenerate-code') ? { ...current, joinCode: 'NEWCODE8' } : { ...current, students: [...current.students, { userId: request.userId!, name: roster.find(s => s.userId === request.userId)!.displayName, addedBy: 'owner', addedAt: new Date().toISOString() }] }
     instances = instances.map(i => i.id === id ? next : i); return { data: clone(next) }
   })
   mock.put.mockImplementation(async (url: string, request: DefinitionRequest) => {

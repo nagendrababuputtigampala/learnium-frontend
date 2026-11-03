@@ -1,4 +1,62 @@
-# Progress — feature/publish (M4 branch 2)
+# Progress — feature/student-flow (M5)
+
+## Part 4 — student dashboard (2026-11-03)
+
+- Added the student Dashboard tab with topic progress bars, exact strong/developing/focus
+  chips, insufficient-data treatment and explicit strong/focus guidance.
+- Added aggregate-only batch comparison cards, five recent results, pending-marking state
+  and new-student/loading/error handling in a responsive single-column phone layout.
+- Full verification: 431 tests across 40 files pass. Coverage is 100% statements
+  (1505/1505), branches (1255/1255), functions (580/580) and lines (1225/1225).
+  Lint and the production build pass; only the seven pre-existing compiler hints and the
+  existing bundle-size warning remain.
+- Part 4 is complete and committed before Part 5; no integrity/camera UI has started.
+
+## Part 3 — marking queue and confirmation (2026-11-03)
+
+- Added the staff marking queue grouped by published instance, with the teacher-nav
+  pending badge and READY, MARKING, FAILED and manual-marking states.
+- Added frozen question/answer review, AI criterion prefill, editable criterion marks,
+  live half-up rescaling, feedback and final confirmation. Failed AI jobs can be rerun;
+  answers without a suggestion open with intentionally blank manual inputs.
+- Full verification: 426 tests across 39 files pass. Coverage is 100% statements
+  (1484/1484), branches (1219/1219), functions (570/570) and lines (1209/1209).
+  Lint and the production build pass; only the seven previously documented compiler
+  hints and the existing bundle-size warning remain.
+- Part 3 is complete and committed before Part 4; no dashboard UI has started.
+
+## Checkpoint B — student player, results and practice (2026-11-03)
+
+- Added the student test player with start/resume, one-question navigation, answered-state
+  indicators, typed autosave, server-deadline countdown, save-and-next and unanswered review.
+- Added submission routing and the result view for objective, pending-marking and confirmed
+  states. Answer keys, solutions and feedback render only when the backend release policy
+  includes them.
+- Added the flashcard practice player with card flipping, Know it / Still learning controls
+  and deliberately client-only progress. Tests-home cards now route to start, resume, result
+  or practice as appropriate.
+- Final verification: 415 tests across 37 files pass. Coverage is 100% statements
+  (1401/1401), branches (1132/1132), functions (536/536) and lines (1148/1148).
+  Lint and the production build pass; the existing non-blocking compiler hints and bundle
+  size warning remain.
+- Checkpoint B is complete and committed before Part 3; no Part 3 work has started.
+
+## Checkpoint A — unified student login and Tests home (2026-11-03)
+
+- Removed the PIN join/session UI and storage. The unified login accepts staff email or
+  `username@centrecode`, routes by role, and enforces independent staff/student guards.
+- Rebuilt roster management around real student accounts: optional contact email,
+  suggested/editable usernames with live availability, existing-student selection, bulk
+  add, rename, resend invite and membership deactivation, all centre-query scoped.
+- Added the student-themed Tests home with assigned test cards, tabs, score/pending states,
+  loading/error/empty handling and logout. `/join` now redirects to the unified login.
+- Final verification: 399 tests across 34 files pass. Coverage is 100% statements
+  (1288/1288), branches (1001/1001), functions (492/492) and lines (1104/1104).
+  Production build and lint pass; lint retains seven non-blocking existing/compiler hints.
+- Checkpoint A is complete. No player, autosave, submission, result or practice UI from
+  Part 2 has started.
+
+# Earlier progress — feature/publish (M4 branch 2)
 
 ## S1 — definition, publish and instance UI (2026-11-02)
 

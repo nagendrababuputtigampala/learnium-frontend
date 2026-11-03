@@ -29,7 +29,7 @@ beforeEach(() => {
 describe('App', () => {
   it('lands on the login page at the root URL when signed out', async () => {
     render(<App />)
-    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Email or student username')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
   })
 

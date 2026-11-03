@@ -4,10 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   adminUser,
   authContextValue as authValue,
+  studentUser,
   teacherUser,
 } from '../../test/fixtures'
 import { useAuth } from '../../lib/auth'
-import { AdminRoute, ProtectedRoute } from './guards'
+import { AdminRoute, ProtectedRoute, StaffRoute, StudentRoute } from './guards'
 
 vi.mock('../../lib/auth', () => ({
   useAuth: vi.fn(),
@@ -81,5 +82,53 @@ describe('AdminRoute', () => {
     mockUseAuth.mockReturnValue(authValue({ user: adminUser }))
     renderAdmin('/admin')
     expect(screen.getByText('Admin page')).toBeInTheDocument()
+  })
+})
+
+describe('StaffRoute', () => {
+  function renderStaff() {
+    return render(<MemoryRouter initialEntries={['/staff']}><Routes><Route path="/student" element={<p>Student home</p>} /><Route element={<StaffRoute />}><Route path="/staff" element={<p>Staff page</p>} /></Route></Routes></MemoryRouter>)
+  }
+
+  it('redirects student accounts to student home', () => {
+    mockUseAuth.mockReturnValue(authValue({ user: studentUser }))
+    renderStaff()
+    expect(screen.getByText('Student home')).toBeInTheDocument()
+  })
+
+  it('renders staff routes for staff accounts', () => {
+    mockUseAuth.mockReturnValue(authValue({ user: teacherUser }))
+    renderStaff()
+    expect(screen.getByText('Staff page')).toBeInTheDocument()
+  })
+})
+
+describe('StudentRoute', () => {
+  function renderStudent() {
+    return render(<MemoryRouter initialEntries={['/student']}><Routes><Route path="/login" element={<p>Login page</p>} /><Route path="/" element={<p>Staff home</p>} /><Route element={<StudentRoute />}><Route path="/student" element={<p>Student page</p>} /></Route></Routes></MemoryRouter>)
+  }
+
+  it('shows loading while restoring', () => {
+    mockUseAuth.mockReturnValue(authValue({ isRestoring: true }))
+    renderStudent()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+  })
+
+  it('redirects signed-out visitors to login', () => {
+    mockUseAuth.mockReturnValue(authValue({ user: null }))
+    renderStudent()
+    expect(screen.getByText('Login page')).toBeInTheDocument()
+  })
+
+  it('redirects staff accounts to staff home', () => {
+    mockUseAuth.mockReturnValue(authValue({ user: teacherUser }))
+    renderStudent()
+    expect(screen.getByText('Staff home')).toBeInTheDocument()
+  })
+
+  it('renders student routes for students', () => {
+    mockUseAuth.mockReturnValue(authValue({ user: studentUser }))
+    renderStudent()
+    expect(screen.getByText('Student page')).toBeInTheDocument()
   })
 })

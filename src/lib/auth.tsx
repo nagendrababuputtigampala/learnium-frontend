@@ -16,14 +16,11 @@ import {
   getSessionGeneration,
   isStaleSessionError,
   refreshAccessToken,
-  saveStudentSession,
   setAccessToken,
   setRefreshToken,
   setSessionExpiredHandler,
   type AuthUser,
   type LoginResponse,
-  type StudentProfile,
-  type StudentSessionResponse,
 } from './api'
 
 export interface AuthContextValue {
@@ -31,11 +28,6 @@ export interface AuthContextValue {
   isRestoring: boolean
   login: (email: string, password: string) => Promise<AuthUser>
   logout: () => Promise<void>
-  studentSession: (
-    batchId: string,
-    fullName: string,
-    pin: string,
-  ) => Promise<StudentProfile>
   restore: () => Promise<void>
 }
 
@@ -48,8 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
 
   /**
-   * Drops every cached query and mutation (including one-time PIN
-   * results). Called on each session transition, before the new
+   * Drops every cached query and mutation. Called on each session transition, before the new
    * session's identity drives any rendering or fetching, so data from
    * a previous account can never leak into the next one.
    */
@@ -64,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     // The whole restore is generation-guarded: if a login, logout or
-    // student session supersedes it mid-flight, its late results are
+    // account session supersedes it mid-flight, its late results are
     // abandoned instead of overwriting (or clearing) the identity
     // that now owns the session.
     const generation = getSessionGeneration()
@@ -139,26 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [navigate, clearCachedData])
 
-  const studentSession = useCallback(
-    async (batchId: string, fullName: string, pin: string) => {
-      const response = await apiClient.post<StudentSessionResponse>(
-        '/auth/student-session',
-        { batchId, fullName, pin },
-      )
-      advanceSessionGeneration()
-      clearCachedData()
-      saveStudentSession(response.data)
-      return response.data.student
-    },
-    [clearCachedData],
-  )
-
   const value: AuthContextValue = {
     user,
     isRestoring,
     login,
     logout,
-    studentSession,
     restore,
   }
 
