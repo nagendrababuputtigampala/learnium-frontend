@@ -9,7 +9,7 @@ import {
   type TopicBand,
 } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { downloadReportPdf } from '../lib/reports'
+import { downloadReportPdf, whatsAppShareUrl } from '../lib/reports'
 
 const bandLabel: Record<Exclude<TopicBand, null>, string> = {
   STRONG: 'Strong',
@@ -302,6 +302,22 @@ export default function StudentReportPage() {
           >
             Download PDF
           </button>
+        )}
+        {report !== null && centreQuery.data && (
+          <a
+            href={whatsAppShareUrl(centreQuery.data.name, report)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 ml-3 inline-block rounded-full border border-emerald-progress px-5 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-progress/10"
+          >
+            Share on WhatsApp
+          </a>
+        )}
+        {report !== null && (
+          <p className="mt-2 text-xs text-ink/50">
+            Sharing on WhatsApp? Download the PDF first, then attach it to the
+            chat — the message only carries the summary.
+          </p>
         )}
         <p className="mt-2 text-xs text-ink/50">
           A report is a frozen snapshot of confirmed results. Regenerate after

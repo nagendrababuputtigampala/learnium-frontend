@@ -229,6 +229,61 @@ describe('StudentReportPage', () => {
     )
   })
 
+  it('builds the WhatsApp share link from the snapshot summary', async () => {
+    mockReads(existingReport)
+    renderPage()
+    const link = await screen.findByRole('link', { name: 'Share on WhatsApp' })
+    const summary = [
+      "Demo Tutoring Centre — Simran's progress report",
+      'Overall: 69%',
+      'Strongest topic: Fractions (90%)',
+      'The full report is attached as a PDF.',
+    ].join('\n')
+    expect(link).toHaveAttribute(
+      'href',
+      `https://wa.me/?text=${encodeURIComponent(summary)}`,
+    )
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(
+      screen.getByText('Sharing on WhatsApp?', { exact: false }),
+    ).toBeInTheDocument()
+  })
+
+  it('omits the strongest topic line when nothing is banded strong', async () => {
+    const noStrong: StudentReportDto = {
+      ...existingReport,
+      facts: {
+        ...existingReport.facts,
+        topics: existingReport.facts.topics.map((topic) => ({
+          ...topic,
+          band: 'FOCUS' as const,
+        })),
+      },
+    }
+    mockReads(noStrong)
+    renderPage()
+    const link = await screen.findByRole('link', { name: 'Share on WhatsApp' })
+    expect(decodeURIComponent(link.getAttribute('href') ?? '')).not.toContain(
+      'Strongest topic',
+    )
+  })
+
+  it('hides the WhatsApp link when the centre cannot be loaded', async () => {
+    mock.get.mockImplementation((url: string) => {
+      if (url === '/me') return Promise.resolve({ data: teacherUser })
+      if (url === '/students/student-1/report')
+        return Promise.resolve({ data: existingReport })
+      return Promise.reject(new Error(`Unexpected GET ${url}`))
+    })
+    renderPage()
+    expect(
+      await screen.findByRole('button', { name: 'Download PDF' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Share on WhatsApp' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('shows a load error that is not a missing report', async () => {
     mockReads('error')
     renderPage()
