@@ -68,7 +68,38 @@ describe('CentreSettingsPage', () => {
       name: 'Renamed Centre',
       logoUrl: 'https://example.test/logo.png',
       contactEmail: 'hello@demo.test',
+      timezone: 'America/Vancouver',
     })
+  })
+
+  it('saves a changed timezone', async () => {
+    mock.get.mockResolvedValue({ data: centreDto })
+    mock.put.mockResolvedValue({ data: centreDto })
+    const user = userEvent.setup()
+    renderWithProviders(<CentreSettingsPage />, ['/admin/settings'])
+    const select = await screen.findByLabelText('Timezone')
+    expect(select).toHaveValue('America/Vancouver')
+    await user.selectOptions(select, 'America/Toronto')
+    await user.click(screen.getByRole('button', { name: 'Save settings' }))
+    expect(await screen.findByText('Settings saved.')).toBeInTheDocument()
+    expect(mock.put).toHaveBeenCalledWith('/centre', {
+      name: 'Demo Tutoring Centre',
+      logoUrl: 'https://example.test/logo.png',
+      contactEmail: 'hello@demo.test',
+      timezone: 'America/Toronto',
+    })
+  })
+
+  it('keeps an unlisted saved timezone selectable', async () => {
+    mock.get.mockResolvedValue({
+      data: { ...centreDto, timezone: 'Asia/Kolkata' },
+    })
+    renderWithProviders(<CentreSettingsPage />, ['/admin/settings'])
+    const select = await screen.findByLabelText('Timezone')
+    expect(select).toHaveValue('Asia/Kolkata')
+    expect(
+      screen.getByRole('option', { name: 'Asia/Kolkata' }),
+    ).toBeInTheDocument()
   })
 
   it('validates the form before saving', async () => {

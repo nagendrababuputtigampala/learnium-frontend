@@ -14,7 +14,22 @@ const centreSettingsSchema = z.object({
   name: z.string().min(1, 'Centre name is required'),
   logoUrl: z.string(),
   contactEmail: z.string().email('Enter a valid email address'),
+  timezone: z.string().min(1, 'Timezone is required'),
 })
+
+/** Canadian IANA zones plus UTC; the centre's saved zone is added when unlisted. */
+const TIMEZONE_OPTIONS = [
+  'America/Vancouver',
+  'America/Whitehorse',
+  'America/Edmonton',
+  'America/Dawson_Creek',
+  'America/Regina',
+  'America/Winnipeg',
+  'America/Toronto',
+  'America/Halifax',
+  'America/St_Johns',
+  'UTC',
+]
 
 type CentreSettingsValues = z.infer<typeof centreSettingsSchema>
 
@@ -34,8 +49,13 @@ function SettingsForm({ centre }: { centre: CentreDto }) {
       name: centre.name,
       logoUrl: centre.logoUrl,
       contactEmail: centre.contactEmail,
+      timezone: centre.timezone,
     },
   })
+
+  const timezoneOptions = TIMEZONE_OPTIONS.includes(centre.timezone)
+    ? TIMEZONE_OPTIONS
+    : [centre.timezone, ...TIMEZONE_OPTIONS]
 
   const saveMutation = useMutation({
     mutationFn: async (values: CentreSettingsValues) => {
@@ -126,6 +146,28 @@ function SettingsForm({ centre }: { centre: CentreDto }) {
             {errors.contactEmail.message}
           </p>
         )}
+      </div>
+      <div>
+        <label
+          htmlFor="centre-timezone"
+          className="mb-1 block text-sm font-medium"
+        >
+          Timezone
+        </label>
+        <select
+          id="centre-timezone"
+          className={inputClassName}
+          {...register('timezone')}
+        >
+          {timezoneOptions.map((zone) => (
+            <option key={zone} value={zone}>
+              {zone}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-ink/50">
+          Used for report dates and times shown to parents.
+        </p>
       </div>
       <button
         type="submit"

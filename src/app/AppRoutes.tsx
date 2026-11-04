@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminRoute, ProtectedRoute, StaffRoute, StudentRoute } from '../components/auth/guards'
 import AppLayout from '../components/layout/AppLayout'
 import BatchesPage from '../pages/BatchesPage'
+import BatchTopicReportPage from '../pages/BatchTopicReportPage'
+import StudentReportPage from '../pages/StudentReportPage'
 import CentreOverviewPage from '../pages/CentreOverviewPage'
 import CentreSettingsPage from '../pages/CentreSettingsPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
@@ -43,6 +45,8 @@ export default function AppRoutes() {
           <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/batches" element={<BatchesPage />} />
+          <Route path="/batches/:batchId/report" element={<BatchTopicReportPage />} />
+          <Route path="/students/:userId/report" element={<StudentReportPage />} />
           <Route path="/instances" element={<InstancesPage />} />
           <Route path="/instances/:instanceId" element={<InstancesPage />} />
           <Route path="/instances/:instanceId/attempts" element={<InstanceAttemptsPage />} />

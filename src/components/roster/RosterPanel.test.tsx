@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { teacherUser, rosterStudentActive, rosterStudentInactive, rosterStudentLocked } from '../../test/fixtures'
@@ -14,7 +15,7 @@ vi.mock('../../lib/auth', () => ({ useAuth: () => ({ user: teacherUser }) }))
 
 function renderPanel() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  return render(<QueryClientProvider client={client}><RosterPanel batchId="batch-1" /></QueryClientProvider>)
+  return render(<QueryClientProvider client={client}><MemoryRouter><RosterPanel batchId="batch-1" /></MemoryRouter></QueryClientProvider>)
 }
 
 function getDefaults(roster: unknown[] = []) {

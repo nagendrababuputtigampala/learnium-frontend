@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { Link } from 'react-router-dom'
 import RosterPanel from '../components/roster/RosterPanel'
 import {
   apiClient,
@@ -259,21 +260,29 @@ export default function BatchesPage() {
                         : `Teacher: ${batch.teacherName}`}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandedBatchId(
-                        expandedBatchId === batch.batchId
-                          ? null
-                          : batch.batchId,
-                      )
-                    }
-                    className="rounded-full border border-indigo-primary px-4 py-1.5 text-sm font-semibold text-indigo-primary transition hover:bg-indigo-tint"
-                  >
-                    {expandedBatchId === batch.batchId
-                      ? 'Hide roster'
-                      : 'View roster'}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      to={`/batches/${batch.batchId}/report`}
+                      className="rounded-full border border-indigo-primary px-4 py-1.5 text-sm font-semibold text-indigo-primary transition hover:bg-indigo-tint"
+                    >
+                      Topic report
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedBatchId(
+                          expandedBatchId === batch.batchId
+                            ? null
+                            : batch.batchId,
+                        )
+                      }
+                      className="rounded-full border border-indigo-primary px-4 py-1.5 text-sm font-semibold text-indigo-primary transition hover:bg-indigo-tint"
+                    >
+                      {expandedBatchId === batch.batchId
+                        ? 'Hide roster'
+                        : 'View roster'}
+                    </button>
+                  </div>
                 </div>
 
                 {isAdmin && (
