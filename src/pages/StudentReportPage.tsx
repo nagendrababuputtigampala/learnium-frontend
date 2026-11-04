@@ -9,6 +9,7 @@ import {
   type TopicBand,
 } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { downloadReportPdf } from '../lib/reports'
 
 const bandLabel: Record<Exclude<TopicBand, null>, string> = {
   STRONG: 'Strong',
@@ -225,6 +226,22 @@ export default function StudentReportPage() {
 
   const commentValue = comment ?? report?.teacherComment ?? ''
 
+  const [downloading, setDownloading] = useState(false)
+  const onDownloadPdf = async (current: StudentReportDto) => {
+    setDownloading(true)
+    try {
+      await downloadReportPdf(
+        `/students/${userId}/report.pdf`,
+        batchId === null ? undefined : { batchId },
+        `report-${current.facts.username ?? userId}.pdf`,
+      )
+    } catch {
+      setErrorMessage('Could not download the PDF.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <header className="mb-6">
@@ -276,6 +293,16 @@ export default function StudentReportPage() {
         >
           {report === null ? 'Generate report' : 'Regenerate report'}
         </button>
+        {report !== null && (
+          <button
+            type="button"
+            disabled={downloading}
+            onClick={() => void onDownloadPdf(report)}
+            className="mt-3 ml-3 rounded-full border border-indigo-primary px-5 py-2.5 text-sm font-semibold text-indigo-primary transition hover:bg-indigo-tint disabled:opacity-60"
+          >
+            Download PDF
+          </button>
+        )}
         <p className="mt-2 text-xs text-ink/50">
           A report is a frozen snapshot of confirmed results. Regenerate after
           new marking is confirmed to refresh it.

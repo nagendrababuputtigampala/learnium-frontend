@@ -97,6 +97,9 @@ const existingReport: StudentReportDto = {
   },
 }
 
+URL.createObjectURL = vi.fn(() => 'blob:report')
+URL.revokeObjectURL = vi.fn()
+
 function renderPage(entry = '/students/student-1/report?batchId=batch-1') {
   return renderWithProviders(
     <Routes>
@@ -191,6 +194,39 @@ describe('StudentReportPage', () => {
     expect(
       screen.getByRole('button', { name: 'Regenerate report' }),
     ).toBeInTheDocument()
+  })
+
+  it('downloads the PDF of the current snapshot', async () => {
+    mockReads(existingReport)
+    const reads = mock.get.getMockImplementation()
+    mock.get.mockImplementation((url: string, config?: unknown) =>
+      url === '/students/student-1/report.pdf'
+        ? Promise.resolve({ data: new Blob(['pdf']) })
+        : reads!(url, config),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Download PDF' }))
+    expect(mock.get).toHaveBeenCalledWith('/students/student-1/report.pdf', {
+      params: { batchId: 'batch-1' },
+      responseType: 'blob',
+    })
+  })
+
+  it('shows an error when the PDF download fails', async () => {
+    mockReads(existingReport)
+    const reads = mock.get.getMockImplementation()
+    mock.get.mockImplementation((url: string, config?: unknown) =>
+      url === '/students/student-1/report.pdf'
+        ? Promise.reject(new Error('down'))
+        : reads!(url, config),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Download PDF' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not download the PDF.',
+    )
   })
 
   it('shows a load error that is not a missing report', async () => {

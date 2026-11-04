@@ -1,6 +1,7 @@
 import { BarChart3, Clock3, Users } from 'lucide-react'
 import { getApiErrorMessage, type TopicBand } from '../../lib/api'
 import { useStudentDashboard } from '../../lib/studentDashboard'
+import StudentReportCard from './StudentReportCard'
 
 const bandLabel: Record<Exclude<TopicBand, null>, string> = { STRONG: 'Strong', DEVELOPING: 'Developing', FOCUS: 'Focus' }
 const bandStyle: Record<Exclude<TopicBand, null>, string> = { STRONG: 'bg-emerald-progress/15 text-emerald-700', DEVELOPING: 'bg-marigold/20 text-amber-800', FOCUS: 'bg-rose-weak/10 text-rose-weak' }
@@ -10,8 +11,9 @@ export default function StudentDashboard() {
   if (dashboard.isPending) return <p className="py-10 text-center text-ink/60">Loading your progress…</p>
   if (dashboard.isError) return <p role="alert" className="mt-5 rounded-xl bg-rose-weak/10 p-4 text-rose-weak">{getApiErrorMessage(dashboard.error, 'Could not load your progress.')}</p>
   const data = dashboard.data
-  if (data.topics.length === 0 && data.recentResults.length === 0) return <div className="py-12 text-center"><h3 className="font-display text-xl font-bold">Your progress will appear here</h3><p className="mt-2 text-ink/60">Complete a scored test to start building your topic dashboard.</p>{data.pendingItemCount > 0 && <p className="mt-4 font-semibold text-amber-700">{data.pendingItemCount} written {data.pendingItemCount === 1 ? 'answer is' : 'answers are'} awaiting marking.</p>}</div>
+  if (data.topics.length === 0 && data.recentResults.length === 0) return <><StudentReportCard /><div className="py-12 text-center"><h3 className="font-display text-xl font-bold">Your progress will appear here</h3><p className="mt-2 text-ink/60">Complete a scored test to start building your topic dashboard.</p>{data.pendingItemCount > 0 && <p className="mt-4 font-semibold text-amber-700">{data.pendingItemCount} written {data.pendingItemCount === 1 ? 'answer is' : 'answers are'} awaiting marking.</p>}</div></>
   return <div className="mt-6 space-y-7">
+    <StudentReportCard />
     {data.pendingItemCount > 0 && <p className="rounded-xl bg-marigold/15 p-4 text-sm font-semibold text-amber-800">{data.pendingItemCount} written {data.pendingItemCount === 1 ? 'answer is' : 'answers are'} awaiting marking. Pending work is not included in your percentages yet.</p>}
     <section><div className="flex items-center gap-2"><BarChart3 size={20} className="text-indigo-primary" /><h3 className="font-display text-xl font-bold">Topic progress</h3></div><div className="mt-4 grid gap-4 md:grid-cols-2">{data.topics.map(topic => <article className="rounded-2xl border border-card-border bg-white p-5" key={topic.topicId}>
       <div className="flex items-start justify-between gap-3"><div><h4 className="font-bold">{topic.topicName}</h4><p className="mt-1 text-sm text-ink/55">{topic.confirmedItemCount} confirmed {topic.confirmedItemCount === 1 ? 'item' : 'items'} · {topic.earnedMarks.toFixed(2)} / {topic.availableMarks.toFixed(2)}</p></div>{topic.band === null ? <span className="rounded-full bg-paper px-3 py-1 text-xs font-semibold text-ink/60">Insufficient data</span> : <span className={`rounded-full px-3 py-1 text-xs font-bold ${bandStyle[topic.band]}`}>{bandLabel[topic.band]}</span>}</div>
