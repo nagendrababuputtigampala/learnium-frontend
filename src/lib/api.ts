@@ -98,6 +98,7 @@ export interface CentreDto {
   code: string
   logoUrl: string
   contactEmail: string
+  timezone: string
 }
 
 export interface StudentLookup {

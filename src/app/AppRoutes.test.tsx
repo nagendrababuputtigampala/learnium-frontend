@@ -67,6 +67,7 @@ function seedSession(user: AuthUser) {
           name: 'Demo Tutoring Centre',
           logoUrl: '',
           contactEmail: 'hello@demo.test',
+          timezone: 'America/Vancouver',
         },
       })
     }

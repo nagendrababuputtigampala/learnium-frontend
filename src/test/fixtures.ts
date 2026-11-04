@@ -270,6 +270,7 @@ export const centreDto: CentreDto = {
   code: 'dtc',
   logoUrl: 'https://example.test/logo.png',
   contactEmail: 'hello@demo.test',
+  timezone: 'America/Vancouver',
 }
 
 export const topics: Topic[] = [
