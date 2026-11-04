@@ -114,6 +114,16 @@ describe('useCameraCapture', () => {
     expect(track.stop).toHaveBeenCalled()
   })
 
+  it('tolerates a rejected play() promise', async () => {
+    vi.spyOn(HTMLVideoElement.prototype, 'play').mockRejectedValue(new Error('autoplay blocked'))
+    const { stream } = fakeStream()
+    getUserMedia.mockResolvedValue(stream)
+    const { unmount } = renderHook(() => useCameraCapture('a-1', true, vi.fn()))
+    await act(async () => undefined)
+    expect(getUserMedia).toHaveBeenCalled()
+    unmount()
+  })
+
   it('tolerates a video element whose play() returns nothing', async () => {
     vi.spyOn(HTMLVideoElement.prototype, 'play').mockReturnValue(undefined as unknown as Promise<void>)
     const { stream } = fakeStream()

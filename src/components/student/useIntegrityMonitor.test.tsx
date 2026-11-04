@@ -32,13 +32,12 @@ describe('useIntegrityMonitor', () => {
   })
 
   it('buffers listener events, warns, and flushes on the interval', async () => {
-    const onEvent = vi.fn()
-    const { result, unmount } = renderHook(() => useIntegrityMonitor('a-1', true, onEvent))
+    const { result, unmount } = renderHook(() => useIntegrityMonitor('a-1', true))
     setHidden(true)
     fireEvent(window, new Event('blur'))
     fireEvent(document.documentElement, new Event('mouseleave'))
     expect(result.current.warning).toBe(true)
-    expect(onEvent).toHaveBeenCalledTimes(3)
+    expect(result.current.eventSeq).toBe(3)
     expect(mocks.record).not.toHaveBeenCalled()
     await act(async () => {
       vi.advanceTimersByTime(10_000)

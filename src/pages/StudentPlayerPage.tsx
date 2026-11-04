@@ -1,6 +1,6 @@
 /* oxlint-disable react/set-state-in-effect -- hydrate resumable server state when the query resolves. */
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import CameraCheck from '../components/student/CameraCheck'
 import { useCameraCapture } from '../components/student/useCameraCapture'
@@ -31,13 +31,11 @@ export default function StudentPlayerPage() {
     const code = (attempt.error as { response?: { data?: { code?: string } } } | null)?.response?.data?.code
     if (code === 'LRN-ATT-004') { setCheckToken(null); setNeedsCheck(true) }
   }, [attempt.error])
-  const captureRef = useRef<(reason: 'PERIODIC' | 'EVENT') => Promise<void>>(async () => undefined)
-  const onIntegrityEvent = useCallback(() => { void captureRef.current('EVENT') }, [])
-  const monitor = useIntegrityMonitor(attempt.data?.attemptId, attempt.data?.integritySignalsOn === true, onIntegrityEvent)
+  const monitor = useIntegrityMonitor(attempt.data?.attemptId, attempt.data?.integritySignalsOn === true)
   const reportCameraLost = monitor.report
   const onCameraLost = useCallback(() => reportCameraLost('CAMERA_LOST'), [reportCameraLost])
   const camera = useCameraCapture(attempt.data?.attemptId, attempt.data !== undefined && attempt.data.cameraMode !== 'OFF', onCameraLost)
-  useEffect(() => { captureRef.current = camera.capture }, [camera.capture])
+  useEffect(() => { if (monitor.eventSeq > 0) void camera.capture('EVENT') }, [monitor.eventSeq, camera.capture])
   useEffect(() => { if (!attempt.data) return; setAnswers(Object.fromEntries(attempt.data.answers.map((saved) => [saved.itemId, saved.answer]))); setSeconds(Math.max(0, Math.floor((new Date(attempt.data.deadlineAt).getTime() - Date.now()) / 1000))) }, [attempt.data])
   useEffect(() => { const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000); return () => window.clearInterval(timer) }, [])
   const save = useMutation({ mutationFn: async ({ itemId, answer }: { itemId: string; answer: Answer }) => apiClient.put(`/student/attempts/${attempt.data?.attemptId}/answers/${itemId}`, { answer }) })

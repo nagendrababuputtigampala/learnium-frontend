@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import CameraCheck from './CameraCheck'
@@ -58,6 +58,18 @@ describe('CameraCheck', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/Camera access was blocked/)
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(await screen.findByRole('button', { name: 'Take photo' })).toBeInTheDocument()
+  })
+
+  it('ignores a stream that arrives after unmount', async () => {
+    let resolveStream: (value: unknown) => void = () => undefined
+    getUserMedia.mockReturnValue(new Promise((resolve) => { resolveStream = resolve }))
+    const { unmount } = render(<CameraCheck instanceId="inst-1" onPassed={vi.fn()} />)
+    unmount()
+    const { stream } = fakeStream()
+    await act(async () => {
+      resolveStream(stream)
+    })
+    expect(screen.queryByRole('button', { name: 'Take photo' })).not.toBeInTheDocument()
   })
 
   it('surfaces capture and upload failures without losing the frame', async () => {

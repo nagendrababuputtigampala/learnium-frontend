@@ -7,17 +7,10 @@ import { recordIntegrityEvents, type IntegrityEventType } from '../../lib/procto
  * the returned flush), and surfaces a transient warning for the student.
  * Events are flags for the teacher — nothing here blocks or submits the test.
  */
-export function useIntegrityMonitor(
-  attemptId: string | undefined,
-  enabled: boolean,
-  onEvent?: (type: IntegrityEventType) => void,
-) {
+export function useIntegrityMonitor(attemptId: string | undefined, enabled: boolean) {
   const buffer = useRef<{ type: IntegrityEventType; occurredAt: string }[]>([])
   const [warning, setWarning] = useState(false)
-  const onEventRef = useRef(onEvent)
-  useEffect(() => {
-    onEventRef.current = onEvent
-  }, [onEvent])
+  const [eventSeq, setEventSeq] = useState(0)
 
   const flush = useCallback(async () => {
     if (!attemptId || buffer.current.length === 0) return
@@ -34,7 +27,7 @@ export function useIntegrityMonitor(
       if (!enabled || !attemptId) return
       buffer.current.push({ type, occurredAt: new Date().toISOString() })
       setWarning(true)
-      onEventRef.current?.(type)
+      setEventSeq((seq) => seq + 1)
       if (buffer.current.length >= 20) void flush()
     },
     [attemptId, enabled, flush],
@@ -76,5 +69,5 @@ export function useIntegrityMonitor(
     }
   }, [attemptId, enabled, report, flush])
 
-  return { report, flush, warning }
+  return { report, flush, warning, eventSeq }
 }

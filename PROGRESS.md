@@ -16,8 +16,18 @@
   and snapshot viewer (authenticated blob fetches; views are audit-logged
   server-side), two-step invalidate.
 - Student DTO types gained integritySignalsOn + cameraMode (backend 8d37eb4).
-- Failing tests: none in the targeted run (49 tests across the 8 new/changed
-  files); full suite + coverage gate run at feature end.
+- Coverage fix round: the first full coverage run landed at 99.6–99.8%.
+  The player wiring was restructured to close an unreachable branch —
+  useIntegrityMonitor no longer takes an onEvent callback; it exposes an
+  eventSeq counter and the player captures an EVENT frame from an effect
+  when it advances (this also removed a captureRef indirection). Added
+  deferred-promise tests for the snapshot thumb/lightbox late-resolution
+  and failure paths, a rejected play() promise, a stream arriving after
+  unmount, and a zero-flag attempt row.
+- Final gate (2026-11-03): **467 tests, 46 files, 100% statements /
+  branches / functions / lines, production build green.** (431 tests on
+  merged dev before Part 5.)
+- Failing tests: none.
 
 ## Part 4 — student dashboard (2026-11-03)
 

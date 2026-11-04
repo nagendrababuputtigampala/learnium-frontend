@@ -67,8 +67,9 @@ export default function CameraCheck({ instanceId, onPassed }: { instanceId: stri
   }
 
   const confirm = async () => {
-    const frame = frameRef.current
-    if (!frame) return
+    // The confirm button only renders in the captured phase, which is only
+    // reachable after a frame has been stored.
+    const frame = frameRef.current as Blob
     setPhase('uploading')
     setError('')
     try {
