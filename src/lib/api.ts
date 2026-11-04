@@ -122,6 +122,8 @@ export interface StudentTest {
   state: StudentTestState
   totalSoFar: number | null
   markingPending: boolean
+  integritySignalsOn: boolean
+  cameraMode: string
 }
 
 export type AttemptStatus = 'IN_PROGRESS' | 'SUBMITTED' | 'AUTO_SUBMITTED' | 'INVALIDATED'
@@ -130,6 +132,7 @@ export interface SavedAnswer { itemId: string; answer: Record<string, unknown>; 
 export interface StudentAttempt {
   attemptId: string; instanceId: string; definitionName: string; attemptNo: number; status: AttemptStatus
   startedAt: string; deadlineAt: string; remainingSeconds: number; items: AttemptItem[]; answers: SavedAnswer[]
+  integritySignalsOn: boolean; cameraMode: string
 }
 export type ResultItemState = 'CORRECT' | 'INCORRECT' | 'PENDING_MARKING' | 'CONFIRMED'
 export interface AttemptResultItem extends AttemptItem {

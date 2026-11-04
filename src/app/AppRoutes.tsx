@@ -12,6 +12,7 @@ import MaterialsPage from '../pages/MaterialsPage'
 import QuestionsPage from '../pages/QuestionsPage'
 import TestsPage from '../pages/TestsPage'
 import InstancesPage from '../pages/InstancesPage'
+import InstanceAttemptsPage from '../pages/InstanceAttemptsPage'
 import TestBuilderPage from '../pages/TestBuilderPage'
 import QuestionDetailPage from '../pages/QuestionDetailPage'
 import NotFoundPage from '../pages/NotFoundPage'
@@ -44,6 +45,7 @@ export default function AppRoutes() {
           <Route path="/batches" element={<BatchesPage />} />
           <Route path="/instances" element={<InstancesPage />} />
           <Route path="/instances/:instanceId" element={<InstancesPage />} />
+          <Route path="/instances/:instanceId/attempts" element={<InstanceAttemptsPage />} />
           <Route path="/tests" element={<TestsPage />} />
           <Route path="/tests/new" element={<TestBuilderPage />} />
           <Route path="/tests/:testId" element={<TestBuilderPage />} />

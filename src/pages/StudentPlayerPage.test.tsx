@@ -8,10 +8,13 @@ import StudentPlayerPage from './StudentPlayerPage'
 
 const mocks = vi.hoisted(() => ({ post: vi.fn(), put: vi.fn() }))
 vi.mock('../lib/api', () => ({ apiClient: { post: mocks.post, put: mocks.put }, getApiErrorMessage: (error: { response?: { data?: { message?: string } } }, fallback: string) => error.response?.data?.message ?? fallback }))
+vi.mock('../components/student/CameraCheck', () => ({
+  default: ({ onPassed }: { onPassed: (token: string) => void }) => <button type="button" onClick={() => onPassed('tok-9')}>Pass camera check</button>,
+}))
 const deadline = new Date(Date.now() + 65_000).toISOString()
 const attempt: StudentAttempt = {
   attemptId: 'attempt-1', instanceId: 'instance-1', definitionName: 'Fractions Check', attemptNo: 1,
-  status: 'IN_PROGRESS', startedAt: new Date().toISOString(), deadlineAt: deadline, remainingSeconds: 65,
+  status: 'IN_PROGRESS', startedAt: new Date().toISOString(), deadlineAt: deadline, remainingSeconds: 65, integritySignalsOn: false, cameraMode: 'OFF',
   items: [
     { itemId: 'mcq', order: 0, type: 'MCQ', marks: 2, payload: { stem: 'Choose one', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }] } },
     { itemId: 'fib', order: 1, type: 'FILL_BLANK', marks: 1, payload: { stemWithBlank: 'Half is _____ percent' } },
@@ -60,6 +63,44 @@ describe('StudentPlayerPage', () => {
     mocks.post.mockRejectedValueOnce({ response: { data: { message: 'Window closed' } } }); renderPage()
     expect(await screen.findByRole('alert')).toHaveTextContent('Window closed')
     resolve({ data: attempt })
+  })
+
+  it('warns on integrity signals and flushes them before submitting', async () => {
+    mocks.post.mockImplementation((url: string) => url.endsWith('/submit') ? Promise.resolve({ data: { attemptId: 'attempt-1' } }) : Promise.resolve({ data: { ...attempt, integritySignalsOn: true } }))
+    const user = userEvent.setup(); renderPage()
+    await screen.findByRole('heading', { name: 'Fractions Check' })
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
+    fireEvent(document, new Event('visibilitychange'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('This was flagged to your teacher.')
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true })
+    await user.click(screen.getByRole('button', { name: 'Save and next' }))
+    await user.click(screen.getByRole('button', { name: 'Save and next' }))
+    await user.click(screen.getByRole('button', { name: 'Save and next' }))
+    await user.click(screen.getByRole('button', { name: 'Save and review' }))
+    await user.click(screen.getByRole('button', { name: 'Submit test' }))
+    expect(await screen.findByTestId('location')).toHaveTextContent('/student/attempts/attempt-1/result')
+    const urls = mocks.post.mock.calls.map(([url]) => url as string)
+    const eventsAt = urls.findIndex((url) => url.endsWith('/integrity-events'))
+    const submitAt = urls.findIndex((url) => url.endsWith('/submit'))
+    expect(eventsAt).toBeGreaterThanOrEqual(0)
+    expect(eventsAt).toBeLessThan(submitAt)
+    const [, body] = mocks.post.mock.calls[eventsAt] as [string, { events: { type: string }[] }]
+    expect(body.events.map((event) => event.type)).toContain('TAB_HIDDEN')
+  })
+
+  it('gates a camera-ON start behind the camera check', async () => {
+    const cameraAttempt = { ...attempt, cameraMode: 'ON' }
+    mocks.post.mockImplementation((url: string, body?: { cameraCheckToken?: string | null }) => {
+      if (url.endsWith('/attempts') && body?.cameraCheckToken !== 'tok-9') {
+        return Promise.reject({ response: { data: { code: 'LRN-ATT-004', message: 'Complete the camera check before starting' } } })
+      }
+      return Promise.resolve({ data: cameraAttempt })
+    })
+    const user = userEvent.setup(); renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Pass camera check' }))
+    expect(await screen.findByRole('heading', { name: 'Fractions Check' })).toBeInTheDocument()
+    const startBodies = mocks.post.mock.calls.filter(([url]) => (url as string).endsWith('/attempts')).map(([, body]) => body)
+    expect(startBodies).toContainEqual({ cameraCheckToken: 'tok-9' })
   })
 
   it('shows unanswered review state and a submit API error', async () => {

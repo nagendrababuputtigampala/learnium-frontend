@@ -1,5 +1,34 @@
 # Progress — feature/student-flow (M5)
 
+## Part 5 — integrity + camera (feature/integrity-camera, Edison-built, 2026-11-03)
+
+- F1: useIntegrityMonitor hook — visibility/blur/mouse-leave/fullscreen-exit
+  listeners, 10s batched flush (plus flush before submit and on unmount),
+  transient "flagged to your teacher" warning, best-effort fullscreen entry.
+- F2: camera gate in the player — an LRN-ATT-004 start response opens the
+  CameraCheck screen (live preview, capture/retake, spec notice, denial
+  state); the returned token retries the start. useCameraCapture keeps the
+  stream open during camera-ON attempts, uploads a frame every ~45s
+  (jittered) and on integrity events, and reports CAMERA_LOST once when the
+  stream ends or cannot open.
+- F3: teacher InstanceAttemptsPage at /instances/:id/attempts (linked from
+  instance cards) — score state, flag counts, expandable integrity timeline
+  and snapshot viewer (authenticated blob fetches; views are audit-logged
+  server-side), two-step invalidate.
+- Student DTO types gained integritySignalsOn + cameraMode (backend 8d37eb4).
+- Coverage fix round: the first full coverage run landed at 99.6–99.8%.
+  The player wiring was restructured to close an unreachable branch —
+  useIntegrityMonitor no longer takes an onEvent callback; it exposes an
+  eventSeq counter and the player captures an EVENT frame from an effect
+  when it advances (this also removed a captureRef indirection). Added
+  deferred-promise tests for the snapshot thumb/lightbox late-resolution
+  and failure paths, a rejected play() promise, a stream arriving after
+  unmount, and a zero-flag attempt row.
+- Final gate (2026-11-03): **467 tests, 46 files, 100% statements /
+  branches / functions / lines, production build green.** (431 tests on
+  merged dev before Part 5.)
+- Failing tests: none.
+
 ## Part 4 — student dashboard (2026-11-03)
 
 - Added the student Dashboard tab with topic progress bars, exact strong/developing/focus
