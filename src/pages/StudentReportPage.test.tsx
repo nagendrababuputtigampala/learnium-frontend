@@ -284,6 +284,110 @@ describe('StudentReportPage', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('renders empty topics and history and downloads a centre-wide report without a username', async () => {
+    const bare: StudentReportDto = {
+      ...existingReport,
+      batchId: null,
+      facts: {
+        ...existingReport.facts,
+        username: null,
+        batchName: null,
+        topics: [],
+        tests: [],
+      },
+    }
+    mockReads(bare)
+    const reads = mock.get.getMockImplementation()
+    mock.get.mockImplementation((url: string, config?: unknown) =>
+      url === '/students/student-1/report.pdf'
+        ? Promise.resolve({ data: new Blob(['pdf']) })
+        : reads!(url, config),
+    )
+    const user = userEvent.setup()
+    renderPage('/students/student-1/report')
+    expect(
+      await screen.findByText('No confirmed topic results yet.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('No completed tests yet.')).toBeInTheDocument()
+    expect(mock.get).toHaveBeenCalledWith('/students/student-1/report', {
+      params: {},
+    })
+    await user.click(screen.getByRole('button', { name: 'Download PDF' }))
+    expect(mock.get).toHaveBeenCalledWith('/students/student-1/report.pdf', {
+      params: undefined,
+      responseType: 'blob',
+    })
+  })
+
+  it('shows None yet under areas to improve when only strong topics exist', async () => {
+    const strongOnly: StudentReportDto = {
+      ...existingReport,
+      facts: {
+        ...existingReport.facts,
+        topics: existingReport.facts.topics.filter(
+          (topic) => topic.band === 'STRONG',
+        ),
+      },
+    }
+    mockReads(strongOnly)
+    renderPage()
+    expect(await screen.findByText('None yet.')).toBeInTheDocument()
+    expect(screen.getByText('Fractions · 90.0%')).toBeInTheDocument()
+  })
+
+  it('picks the highest-percentage strong topic for the WhatsApp summary', async () => {
+    const twoStrong: StudentReportDto = {
+      ...existingReport,
+      facts: {
+        ...existingReport.facts,
+        topics: [
+          { ...existingReport.facts.topics[1], band: 'STRONG' as const, percentage: 85 },
+          existingReport.facts.topics[0],
+        ],
+      },
+    }
+    mockReads(twoStrong)
+    renderPage()
+    const link = await screen.findByRole('link', { name: 'Share on WhatsApp' })
+    expect(decodeURIComponent(link.getAttribute('href') ?? '')).toContain(
+      'Strongest topic: Fractions (90%)',
+    )
+  })
+
+  it('clears the comment box when the generated report has no comment', async () => {
+    mockReads('missing')
+    mock.post.mockResolvedValue({
+      data: { ...existingReport, teacherComment: null },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('No report generated yet.', { exact: false })
+    await user.click(screen.getByRole('button', { name: 'Generate report' }))
+    expect(await screen.findByText('Simran Kaur')).toBeInTheDocument()
+    expect(
+      screen.getByLabelText('Teacher comment (goes on the report)'),
+    ).toHaveValue('')
+  })
+
+  it('renders the username without a centre suffix when the user has no centre code', async () => {
+    mock.get.mockImplementation((url: string) => {
+      if (url === '/me')
+        return Promise.resolve({ data: { ...teacherUser, centreCode: null } })
+      if (url === '/centre') return Promise.resolve({ data: centreDto })
+      if (url === '/students/student-1/report')
+        return Promise.resolve({ data: existingReport })
+      return Promise.reject(new Error(`Unexpected GET ${url}`))
+    })
+    renderPage()
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.tagName === 'P' &&
+          element.textContent === 'simran.k · Report scoped to Batch 8',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('shows a load error that is not a missing report', async () => {
     mockReads('error')
     renderPage()
