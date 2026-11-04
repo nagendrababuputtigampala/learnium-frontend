@@ -209,6 +209,56 @@ export interface BatchTopicReportDto {
   batchName: string
   topics: BatchTopicDto[]
 }
+
+export interface ReportOverallDto {
+  confirmedItems: number
+  pendingItems: number
+  earnedMarks: number
+  availableMarks: number
+  percentage: number
+  markingCoveragePercent: number
+}
+
+export interface ReportTopicDto {
+  topicId: string
+  topicName: string
+  confirmedItems: number
+  pendingItems: number
+  earnedMarks: number
+  availableMarks: number
+  percentage: number
+  band: TopicBand
+}
+
+export interface ReportTestDto {
+  attemptId: string
+  testName: string
+  batchName: string
+  submittedAt: string
+  earnedMarks: number
+  availableMarks: number
+  percentage: number
+  pendingItems: number
+}
+
+export interface StoredReportFacts {
+  studentName: string
+  username: string | null
+  batchName: string | null
+  overall: ReportOverallDto
+  topics: ReportTopicDto[]
+  tests: ReportTestDto[]
+}
+
+export interface StudentReportDto {
+  reportId: string
+  studentId: string
+  batchId: string | null
+  teacherComment: string | null
+  generatedBy: string
+  generatedAt: string
+  facts: StoredReportFacts
+}
 export interface TopicPerformance {
   topicId: string
   topicName: string
