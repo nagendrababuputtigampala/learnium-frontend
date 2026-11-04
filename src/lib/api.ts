@@ -191,6 +191,24 @@ export interface MarkingConfirmRequest {
 }
 
 export type TopicBand = 'STRONG' | 'DEVELOPING' | 'FOCUS' | null
+
+export interface BatchTopicDto {
+  topicId: string
+  topicName: string
+  confirmedItems: number
+  pendingItems: number
+  studentCount: number
+  earnedMarks: number
+  availableMarks: number
+  percentage: number | null
+  band: TopicBand
+}
+
+export interface BatchTopicReportDto {
+  batchId: string
+  batchName: string
+  topics: BatchTopicDto[]
+}
 export interface TopicPerformance {
   topicId: string
   topicName: string
